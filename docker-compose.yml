@@ -1,0 +1,88 @@
+services:
+  # OpenCode CLI (MCP Client)
+  opencode:
+    environment:
+      - ANTHROPIC_API_KEY=${ANTHROPIC_API_KEY:-}
+      - OLLAMA_BASE_URL=${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      - DOCKER_HOST=unix:///var/run/docker.sock
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - JENKINS_URL=${JENKINS_URL:-}
+      - JENKINS_USERNAME=${JENKINS_USERNAME:-}
+      - JENKINS_API_TOKEN=${JENKINS_API_TOKEN:-}
+      - TODOIST_API_TOKEN=${TODOIST_API_TOKEN:-}
+      - YAHOO_EMAIL=${YAHOO_EMAIL:-}
+      - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD:-}
+    build:
+      context: ./opencode
+      dockerfile: Dockerfile
+    container_name: opencode
+    volumes:
+      - ./opencode/config:/root/.config/opencode
+      - ./opencode/data:/root/.local/share/opencode
+      - ./opencode/codex:/root/.codex
+      - ./docker-compose.yml:/app/docker-compose.yml:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    stdin_open: true
+    tty: true
+    profiles:
+      - opencode
+    networks:
+      - mcp-network
+
+  # Yahoo Mail MCP Server (SSE mode)
+  yahoo-mail-mcp:
+    build:
+      context: ./servers/yahoo-mail-mcp-server
+      dockerfile: Dockerfile
+    container_name: yahoo-mail-mcp
+    environment:
+      - YAHOO_EMAIL=${YAHOO_EMAIL}
+      - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD}
+      - TRANSPORT_MODE=sse
+      - PORT=3101
+    ports:
+      - "3101:3101"
+    networks:
+      - mcp-network
+
+  # Alertmanager MCP Server (SSE mode)
+  alertmanager-mcp:
+    image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
+    container_name: alertmanager-mcp
+    environment:
+      - ALERTMANAGER_URL=${ALERTMANAGER_URL}
+      - ALERTMANAGER_USERNAME=${ALERTMANAGER_USERNAME:-}
+      - ALERTMANAGER_PASSWORD=${ALERTMANAGER_PASSWORD:-}
+      - MCP_TRANSPORT=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8001
+    ports:
+      - "8001:8001"
+    networks:
+      - mcp-network
+
+  # Tado MCP Server (SSE mode)
+  tado-mcp:
+    image: tado-mcp-python:latest
+    container_name: tado-mcp
+    build:
+      context: ./servers/tado-mcp-python
+      dockerfile: Dockerfile
+    environment:
+      - TRANSPORT_MODE=sse
+      - PORT=3102
+    ports:
+      - "3102:3102"
+    volumes:
+      - ./data/tado:/data
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    name: mcp-server-setup_mcp-network
+    driver: bridge
