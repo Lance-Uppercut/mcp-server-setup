@@ -9,6 +9,11 @@ pipeline {
         timestamps()
     }
     
+    environment {
+        DOCKER_REGISTRY = 'registry.hub.docker.com/soerendel'
+        DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
+    }
+    
     stages {
         stage('Checkout') {
             steps {
@@ -16,60 +21,38 @@ pipeline {
             }
         }
         
-        stage('Clone missing server repos') {
-            steps {
-                script {
-                    def servers = [
-                        [name: 'yahoo-mail-mcp-server', url: 'https://github.com/Offbeat-IoT/yahoo-mail-mcp-server.git'],
-                        [name: 'tado-mcp-python', url: 'https://github.com/Offbeat-IoT/tado-mcp-python.git'],
-                        [name: 'mcp-google-workspace', url: 'https://github.com/Offbeat-IoT/mcp-google-workspace.git']
-                    ]
-                    servers.each { server ->
-                        sh """
-                            if [ ! -d "servers/${server.name}" ]; then
-                                echo "Cloning ${server.name}..."
-                                git clone ${server.url} servers/${server.name}
-                            else
-                                echo "servers/${server.name} already exists"
-                            fi
-                        """
-                    }
-                }
-            }
-        }
-        
         stage('Build Docker images') {
             steps {
-                sh 'docker compose build'
-            }
-        }
-        
-        stage('Start services') {
-            steps {
-                sh 'docker compose up -d'
-            }
-        }
-        
-        stage('Verify MCP servers') {
-            steps {
                 script {
-                    def servers = ['yahoo-mail-mcp', 'alertmanager-mcp', 'tado-mcp']
-                    servers.each { server ->
-                        sh """
-                            echo "Checking ${server}..."
-                            docker ps --filter "name=${server}" --format "{{.Status}}"
-                        """
-                    }
+                    def branchName = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9]', '-')
+                    def shortSha = sh(script: 'git rev-parse --short=5 HEAD', returnStdout: true).trim()
+                    def tag = "${branchName}-${shortSha}"
+                    
+                    sh """
+                        docker compose build
+                        docker tag jenkins-mcp-spring:latest \${DOCKER_REGISTRY}/jenkins-mcp-spring:${tag}
+                        docker tag tado-mcp-python:latest \${DOCKER_REGISTRY}/tado-mcp-python:${tag}
+                        docker tag alertmanager-mcp:latest \${DOCKER_REGISTRY}/alertmanager-mcp:${tag}
+                    """
                 }
             }
         }
         
-        stage('Test Tado SSE endpoint') {
+        stage('Push Docker images') {
             steps {
-                sh '''
-                    sleep 5
-                    curl -s -X GET http://localhost:3102/sse -H "Accept: text/event-stream" --max-time 5 | head -1
-                '''
+                script {
+                    def branchName = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9]', '-')
+                    def shortSha = sh(script: 'git rev-parse --short=5 HEAD', returnStdout: true).trim()
+                    def tag = "${branchName}-${shortSha}"
+                    
+                    withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
+                        sh """
+                            docker push \${DOCKER_REGISTRY}/jenkins-mcp-spring:${tag}
+                            docker push \${DOCKER_REGISTRY}/tado-mcp-python:${tag}
+                            docker push \${DOCKER_REGISTRY}/alertmanager-mcp:${tag}
+                        """
+                    }
+                }
             }
         }
     }
