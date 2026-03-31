@@ -1,12 +1,10 @@
 pipeline {
     agent {
         label 'build'
-        options {
-            requiresBuildSlot true
-        }
     }
     
     options {
+        requiresBuildSlot true
         timeout(time: 30, unit: 'MINUTES')
         timestamps()
     }
