@@ -8,11 +8,17 @@ An MCP server is considered **working** when it meets all of the following crite
 
 The server must compile/build without errors.
 
-### Node.js (Yahoo Mail)
+### Node.js (Yahoo Mail, Jenkins)
 ```bash
+# Yahoo Mail
 cd servers/yahoo-mail-mcp-server
 npm install
-npm run build  # or npm run build if using TypeScript
+npm run build
+
+# Jenkins
+cd servers/jenkins-mcp
+npm install
+npm run build
 ```
 
 ### Python (Tado)
@@ -132,29 +138,69 @@ docker compose exec opencode opencode mcp list
 - `get_receivers` - List receivers
 - `get_alert_groups` - List alert groups
 
+### Jenkins (SSE Transport)
+
+```bash
+# Build and start the server
+docker compose build jenkins-mcp
+docker compose up -d jenkins-mcp
+
+# Verify SSE endpoint responds
+curl -s http://localhost:3103/sse -H "Accept: text/event-stream" --max-time 3
+
+# Verify with MCP list (OpenCode shows as connected when SSE endpoint responds)
+docker compose exec opencode opencode mcp list
+```
+
+**Expected Tools:**
+- `get_all_items` - Get all jobs
+- `get_item` - Get specific job
+- `get_item_config` - Get job config XML
+- `build_item` - Trigger a build
+- `get_all_nodes` - Get all nodes
+- `get_node` - Get specific node
+- `get_queue_item` - Get queue item
+- `get_running_builds` - Get running builds
+- `get_build` - Get build info
+- `get_build_console_tail` - Get console output
+- `stop_build` - Stop a build
+- And many more...
+
 ---
 
 ## 3. Reusable Configuration (`./opencode/config/opencode.json`)
 
 Each server must have a properly formatted configuration entry in `opencode/config/opencode.json` for reuse in other MCP clients.
 
-### SSE Servers (Yahoo Mail, Alertmanager)
+### SSE Servers (Yahoo Mail, Alertmanager, Tado, Jenkins)
 ```json
 {
-  "mcpServers": {
+  "mcp": {
     "yahoo-mail": {
-      "transport": "sse",
-      "url": "http://yahoo-mail-mcp:3101/mcp/sse"
+      "type": "remote",
+      "url": "http://yahoo-mail-mcp:3101/mcp/sse",
+      "enabled": true
     },
     "alertmanager": {
-      "transport": "sse", 
-      "url": "http://alertmanager-mcp:8001/sse"
+      "type": "remote",
+      "url": "http://alertmanager-mcp:8001/sse",
+      "enabled": true
+    },
+    "tado": {
+      "type": "remote",
+      "url": "http://tado-mcp:3102/sse",
+      "enabled": true
+    },
+    "jenkins": {
+      "type": "remote",
+      "url": "http://jenkins-mcp:3103/sse",
+      "enabled": true
     }
   }
 }
 ```
 
-### Stdio Servers (Tado)
+### Local Servers (GitHub, Google Workspace)
 ```json
 {
   "mcpServers": {
