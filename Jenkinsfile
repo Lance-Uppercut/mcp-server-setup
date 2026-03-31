@@ -1,6 +1,9 @@
 pipeline {
     agent {
         label 'build'
+        options {
+            requiresBuildSlot true
+        }
     }
     
     options {
