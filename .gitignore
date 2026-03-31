@@ -22,12 +22,3 @@ img.png
 # OS
 .DS_Store
 Thumbs.db
-
-# MCP Server repos (cloned separately)
-servers/jenkins-mcp/
-servers/mcp-google-workspace/
-servers/yahoo-mail-mcp-server/
-servers/tado-mcp/
-servers/tado-mcp-python/
-servers/mcp-google-workspace;C/
-servers/tado-mcp;C/

@@ -1,0 +1,740 @@
+import {
+  type Build,
+  type BuildConsoleChunk,
+  type BuildConsoleTail,
+  type BuildReplay,
+  parseBuild,
+  parseBuildReplay
+} from "./model/build.js";
+import { type ItemType, isColorItem, serializeItem } from "./model/item.js";
+import { type Node, parseNode } from "./model/node.js";
+import { type Queue, type QueueItem, parseQueue, parseQueueItem } from "./model/queue.js";
+import { Agent } from "undici";
+import {
+  BUILD,
+  BUILD_CONSOLE_OUTPUT,
+  BUILD_PROGRESSIVE_LOG,
+  BUILD_REPLAY,
+  BUILD_STOP,
+  BUILD_TEST_REPORT,
+  CRUMB,
+  ITEM,
+  ITEM_BUILD,
+  ITEM_CONFIG,
+  ITEMS,
+  NODE,
+  NODE_CONFIG,
+  NODES,
+  QUEUE,
+  QUEUE_CANCEL_ITEM,
+  QUEUE_ITEM
+} from "./rest-endpoint.js";
+
+export type JenkinsHttpMethod = "GET" | "POST" | "PUT" | "DELETE" | "PATCH";
+
+export interface JenkinsOptions {
+  url: string;
+  username: string;
+  password: string;
+  timeout?: number;
+  verifySsl?: boolean;
+}
+
+export interface RequestOptions {
+  data?: Record<string, string | number | boolean> | string;
+  headers?: Record<string, string>;
+  crumb?: boolean;
+  params?: Record<string, string | number | boolean>;
+}
+
+export class JenkinsHttpError extends Error {
+  constructor(
+    message: string,
+    public readonly status: number,
+    public readonly responseText: string
+  ) {
+    super(message);
+    this.name = "JenkinsHttpError";
+  }
+}
+
+function decodeHtmlEntities(input: string): string {
+  return input
+    .replaceAll("&lt;", "<")
+    .replaceAll("&gt;", ">")
+    .replaceAll("&quot;", '"')
+    .replaceAll("&#39;", "'")
+    .replaceAll("&amp;", "&");
+}
+
+function toBuildReplayFromHtml(html: string): BuildReplay {
+  const scriptNamePattern = /_\..*Script.*/;
+  const textareaPattern = /<textarea\b[^>]*name="([^"]+)"[^>]*>([\s\S]*?)<\/textarea>/gi;
+  const scripts: string[] = [];
+
+  for (const match of html.matchAll(textareaPattern)) {
+    const name = match[1];
+    const content = match[2] ?? "";
+
+    if (name && scriptNamePattern.test(name)) {
+      scripts.push(decodeHtmlEntities(content));
+    }
+  }
+
+  return parseBuildReplay({ scripts });
+}
+
+function parseHeaderInteger(value: string | null): number | undefined {
+  if (value === null) {
+    return undefined;
+  }
+
+  const parsed = Number.parseInt(value, 10);
+  return Number.isNaN(parsed) ? undefined : parsed;
+}
+
+function parseHeaderBoolean(value: string | null): boolean | undefined {
+  if (value === null) {
+    return undefined;
+  }
+
+  if (value === "true") {
+    return true;
+  }
+
+  if (value === "false") {
+    return false;
+  }
+
+  return undefined;
+}
+
+function isUtf8ContinuationByte(value: number): boolean {
+  return (value & 0b1100_0000) === 0b1000_0000;
+}
+
+function utf8SequenceLength(value: number): number {
+  if ((value & 0b1000_0000) === 0) {
+    return 1;
+  }
+
+  if ((value & 0b1110_0000) === 0b1100_0000) {
+    return 2;
+  }
+
+  if ((value & 0b1111_0000) === 0b1110_0000) {
+    return 3;
+  }
+
+  if ((value & 0b1111_1000) === 0b1111_0000) {
+    return 4;
+  }
+
+  return 0;
+}
+
+function trimIncompleteUtf8Suffix(bytes: Uint8Array): number {
+  if (bytes.length === 0) {
+    return 0;
+  }
+
+  let continuationBytes = 0;
+  let leadIndex = bytes.length - 1;
+
+  while (leadIndex >= 0 && continuationBytes < 3 && isUtf8ContinuationByte(bytes[leadIndex] ?? 0)) {
+    continuationBytes += 1;
+    leadIndex -= 1;
+  }
+
+  if (leadIndex < 0) {
+    return 0;
+  }
+
+  const sequenceLength = utf8SequenceLength(bytes[leadIndex] ?? 0);
+  if (sequenceLength === 0) {
+    return bytes.length;
+  }
+
+  const availableLength = continuationBytes + 1;
+  return sequenceLength > availableLength ? leadIndex : bytes.length;
+}
+
+function trimLeadingUtf8ContinuationBytes(bytes: Uint8Array): number {
+  let index = 0;
+
+  while (index < bytes.length && index < 3 && isUtf8ContinuationByte(bytes[index] ?? 0)) {
+    index += 1;
+  }
+
+  return index;
+}
+
+function decodeUtf8Window(
+  bytes: Uint8Array,
+  trimLeadingContinuationBytes = false
+): {
+  text: string;
+  byteLength: number;
+  startOffset: number;
+  trimmed: boolean;
+} {
+  const startOffset = trimLeadingContinuationBytes ? trimLeadingUtf8ContinuationBytes(bytes) : 0;
+  const trimmedStart = bytes.subarray(startOffset);
+  const endOffset = trimIncompleteUtf8Suffix(trimmedStart);
+  const decodedBytes = trimmedStart.subarray(0, endOffset);
+
+  return {
+    text: new TextDecoder().decode(decodedBytes),
+    byteLength: decodedBytes.byteLength,
+    startOffset,
+    trimmed: startOffset > 0 || endOffset < trimmedStart.byteLength
+  };
+}
+
+async function readTailText(response: Response, maxBytes: number): Promise<BuildConsoleTail> {
+  const body = response.body;
+  if (!body) {
+    return {
+      start: 0,
+      nextStart: 0,
+      totalBytes: 0,
+      truncated: false,
+      text: ""
+    };
+  }
+
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let bufferedBytes = 0;
+  let totalBytes = 0;
+
+  while (true) {
+    const { done, value } = await reader.read();
+    if (done) {
+      break;
+    }
+
+    if (!value || value.byteLength === 0) {
+      continue;
+    }
+
+    const chunk = new Uint8Array(value);
+    chunks.push(chunk);
+    bufferedBytes += chunk.byteLength;
+    totalBytes += chunk.byteLength;
+
+    while (bufferedBytes > maxBytes && chunks.length > 0) {
+      const head = chunks[0];
+      if (!head) {
+        break;
+      }
+
+      const overflow = bufferedBytes - maxBytes;
+      if (overflow >= head.byteLength) {
+        chunks.shift();
+        bufferedBytes -= head.byteLength;
+      } else {
+        chunks[0] = head.slice(overflow);
+        bufferedBytes -= overflow;
+      }
+    }
+  }
+
+  const tail = new Uint8Array(bufferedBytes);
+  let offset = 0;
+  for (const chunk of chunks) {
+    tail.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  const decodedTail = decodeUtf8Window(tail, true);
+  const start = totalBytes - bufferedBytes + decodedTail.startOffset;
+  const nextStart = start + decodedTail.byteLength;
+
+  return {
+    start,
+    nextStart,
+    totalBytes,
+    truncated: totalBytes > bufferedBytes || decodedTail.trimmed,
+    text: decodedTail.text
+  };
+}
+
+async function readTextWindow(
+  response: Response,
+  maxBytes: number
+): Promise<{ text: string; bytesRead: number; truncated: boolean }> {
+  const body = response.body;
+  if (!body) {
+    return {
+      text: "",
+      bytesRead: 0,
+      truncated: false
+    };
+  }
+
+  const reader = body.getReader();
+  const chunks: Uint8Array[] = [];
+  let bytesRead = 0;
+  let truncated = false;
+
+  try {
+    while (true) {
+      const { done, value } = await reader.read();
+      if (done) {
+        break;
+      }
+
+      if (!value || value.byteLength === 0) {
+        continue;
+      }
+
+      const remaining = maxBytes - bytesRead;
+      if (remaining <= 0) {
+        truncated = true;
+        await reader.cancel();
+        break;
+      }
+
+      const chunk = new Uint8Array(value);
+      if (chunk.byteLength > remaining) {
+        chunks.push(chunk.slice(0, remaining));
+        bytesRead += remaining;
+        truncated = true;
+        await reader.cancel();
+        break;
+      }
+
+      chunks.push(chunk);
+      bytesRead += chunk.byteLength;
+    }
+  } finally {
+    reader.releaseLock();
+  }
+
+  const window = new Uint8Array(bytesRead);
+  let offset = 0;
+  for (const chunk of chunks) {
+    window.set(chunk, offset);
+    offset += chunk.byteLength;
+  }
+
+  const decodedWindow = decodeUtf8Window(window);
+
+  return {
+    text: decodedWindow.text,
+    bytesRead: decodedWindow.byteLength,
+    truncated: truncated || decodedWindow.trimmed
+  };
+}
+
+export class Jenkins {
+  static readonly DEFAULT_HEADERS = { "Content-Type": "text/xml; charset=utf-8" };
+
+  readonly url: string;
+  readonly timeout: number;
+  readonly verifySsl: boolean;
+
+  private readonly username: string;
+  private readonly password: string;
+  private readonly fetchImpl: typeof fetch;
+  private readonly dispatcher: unknown;
+  private _crumbHeader: Record<string, string> | null = null;
+
+  constructor(options: JenkinsOptions, fetchImpl: typeof fetch = fetch) {
+    this.url = options.url;
+    this.username = options.username;
+    this.password = options.password;
+    this.timeout = options.timeout ?? 75;
+    this.verifySsl = options.verifySsl ?? true;
+    this.fetchImpl = fetchImpl;
+    this.dispatcher = this.verifySsl
+      ? undefined
+      : new Agent({
+          connect: {
+            rejectUnauthorized: false
+          }
+        });
+  }
+
+  endpointUrl(endpoint: string): string {
+    return [this.url, endpoint]
+      .map((segment) => String(segment).replace(/^\/+|\/+$/g, ""))
+      .join("/");
+  }
+
+  async request(
+    method: JenkinsHttpMethod,
+    endpoint: string,
+    options: RequestOptions = {}
+  ): Promise<Response> {
+    const { data, headers, crumb = true, params } = options;
+
+    const finalHeaders = new Headers(headers);
+    if (crumb) {
+      const crumbHeader = await this.crumbHeader();
+      for (const [key, value] of Object.entries(crumbHeader)) {
+        finalHeaders.set(key, value);
+      }
+    }
+
+    const credentials = Buffer.from(`${this.username}:${this.password}`).toString("base64");
+    finalHeaders.set("Authorization", `Basic ${credentials}`);
+
+    const requestUrl = new URL(this.endpointUrl(endpoint));
+    if (params) {
+      for (const [key, value] of Object.entries(params)) {
+        requestUrl.searchParams.set(key, String(value));
+      }
+    }
+
+    const requestInit: RequestInit = {
+      method,
+      headers: finalHeaders
+    };
+
+    if (typeof data === "string") {
+      requestInit.body = data;
+    } else if (data) {
+      const formBody = new URLSearchParams();
+      for (const [key, value] of Object.entries(data)) {
+        formBody.set(key, String(value));
+      }
+      requestInit.body = formBody;
+    }
+
+    const timeoutController = new AbortController();
+    const timeoutHandle = setTimeout(() => timeoutController.abort(), this.timeout * 1000);
+    requestInit.signal = timeoutController.signal;
+    if (this.dispatcher) {
+      (requestInit as unknown as { dispatcher?: unknown }).dispatcher = this.dispatcher;
+    }
+
+    try {
+      const response = await this.fetchImpl(requestUrl, requestInit as RequestInit);
+      if (!response.ok) {
+        throw new JenkinsHttpError(
+          `Jenkins request failed with status ${response.status}`,
+          response.status,
+          await response.text()
+        );
+      }
+      return response;
+    } catch (error) {
+      if (error instanceof JenkinsHttpError) {
+        throw error;
+      }
+
+      if (error instanceof Error && error.name === "AbortError") {
+        throw new JenkinsHttpError(
+          `Jenkins request timed out after ${this.timeout} seconds`,
+          408,
+          ""
+        );
+      }
+
+      throw error;
+    } finally {
+      clearTimeout(timeoutHandle);
+    }
+  }
+
+  async crumbHeader(): Promise<Record<string, string>> {
+    if (this._crumbHeader !== null) {
+      return this._crumbHeader;
+    }
+
+    try {
+      const response = await this.request("GET", CRUMB.call({}), { crumb: false });
+      const crumb = (await response.json()) as { crumbRequestField?: string; crumb?: string };
+      if (crumb.crumbRequestField && crumb.crumb) {
+        this._crumbHeader = { [crumb.crumbRequestField]: crumb.crumb };
+      } else {
+        this._crumbHeader = {};
+      }
+    } catch (error) {
+      if (error instanceof JenkinsHttpError && error.status === 404) {
+        this._crumbHeader = {};
+      } else {
+        throw error;
+      }
+    }
+
+    return this._crumbHeader;
+  }
+
+  parseFullname(fullname: string): [string, string] {
+    const parts = fullname.split("/");
+    const name = parts.at(-1) ?? "";
+    const folder = parts.length > 1 ? `job/${parts.slice(0, -1).join("/job/")}/` : "";
+    return [folder, name];
+  }
+
+  async getQueue(depth = 1): Promise<Queue> {
+    const response = await this.request("GET", QUEUE.call({ depth }));
+    return parseQueue(await response.json());
+  }
+
+  async getQueueItem(id: number, depth = 0): Promise<QueueItem> {
+    const response = await this.request("GET", QUEUE_ITEM.call({ id, depth }));
+    return parseQueueItem(await response.json());
+  }
+
+  async cancelQueueItem(id: number): Promise<void> {
+    await this.request("POST", QUEUE_CANCEL_ITEM.call({ id }));
+  }
+
+  async getNode(name: string, depth = 0): Promise<Node> {
+    const normalizedName = name === "master" || name === "Built-In Node" ? "(master)" : name;
+    const response = await this.request("GET", NODE.call({ name: normalizedName, depth }));
+    return parseNode(await response.json());
+  }
+
+  async getNodes(depth = 0): Promise<Node[]> {
+    const response = await this.request("GET", NODES.call({ depth }));
+    const payload = (await response.json()) as { computer?: unknown[] };
+    return (payload.computer ?? []).map(parseNode);
+  }
+
+  async getNodeConfig(name: string): Promise<string> {
+    const response = await this.request("GET", NODE_CONFIG.call({ name }));
+    return response.text();
+  }
+
+  async setNodeConfig(name: string, configXml: string): Promise<void> {
+    await this.request("POST", NODE_CONFIG.call({ name }), {
+      headers: Jenkins.DEFAULT_HEADERS,
+      data: configXml
+    });
+  }
+
+  async getBuild(fullname: string, number: number, depth = 0): Promise<Build> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request("GET", BUILD.call({ folder, name, number, depth }));
+    return parseBuild(await response.json());
+  }
+
+  async getBuildConsoleOutput(fullname: string, number: number): Promise<string> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request("GET", BUILD_CONSOLE_OUTPUT.call({ folder, name, number }));
+    return response.text();
+  }
+
+  async getBuildConsoleChunk(
+    fullname: string,
+    number: number,
+    start: number,
+    maxBytes = 64 * 1024
+  ): Promise<BuildConsoleChunk> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request(
+      "GET",
+      BUILD_PROGRESSIVE_LOG.call({ folder, name, number }),
+      {
+        params: { start }
+      }
+    );
+    const limitedChunk = await readTextWindow(response, Math.max(1, Math.trunc(maxBytes)));
+    const textSizeHeader = parseHeaderInteger(response.headers.get("x-text-size"));
+    const hasMore = parseHeaderBoolean(response.headers.get("x-more-data")) ?? false;
+    const nextStart = start + limitedChunk.bytesRead;
+    const truncated =
+      textSizeHeader !== undefined ? textSizeHeader > nextStart : limitedChunk.truncated;
+
+    return {
+      start,
+      nextStart,
+      hasMore: hasMore || truncated,
+      completed: !(hasMore || truncated),
+      text: limitedChunk.text
+    };
+  }
+
+  async getBuildConsoleTail(
+    fullname: string,
+    number: number,
+    maxBytes = 64 * 1024
+  ): Promise<BuildConsoleTail> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request("GET", BUILD_CONSOLE_OUTPUT.call({ folder, name, number }));
+    return readTailText(response, Math.max(1, Math.trunc(maxBytes)));
+  }
+
+  async stopBuild(fullname: string, number: number): Promise<void> {
+    const [folder, name] = this.parseFullname(fullname);
+    await this.request("POST", BUILD_STOP.call({ folder, name, number }));
+  }
+
+  async getBuildReplay(fullname: string, number: number): Promise<BuildReplay> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request("GET", BUILD_REPLAY.call({ folder, name, number }));
+    return toBuildReplayFromHtml(await response.text());
+  }
+
+  async getBuildTestReport(
+    fullname: string,
+    number: number,
+    depth = 0
+  ): Promise<Record<string, unknown>> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request(
+      "GET",
+      BUILD_TEST_REPORT.call({ folder, name, number, depth })
+    );
+    return (await response.json()) as Record<string, unknown>;
+  }
+
+  async getRunningBuilds(): Promise<Build[]> {
+    const builds: Build[] = [];
+
+    for (const node of await this.getNodes(2)) {
+      for (const executor of node.executors) {
+        if (executor.currentExecutable?.number) {
+          builds.push(parseBuild(executor.currentExecutable));
+        }
+      }
+    }
+
+    return builds;
+  }
+
+  async getItems(folderDepth?: number, folderDepthPerRequest = 10): Promise<ItemType[]> {
+    const query = Array.from({ length: folderDepthPerRequest }).reduce<string>(
+      (currentQuery) => `jobs[url,color,name,${currentQuery}]`,
+      "jobs"
+    );
+
+    const response = await this.request("GET", ITEMS.call({ folder: "", query }));
+    const payload = (await response.json()) as { jobs?: unknown[] };
+
+    const items: ItemType[] = [];
+    const itemStack: Array<[number, string[], unknown]> = [[0, [], payload.jobs ?? []]];
+
+    for (const [level, path, levelItems] of itemStack) {
+      const currentItems = Array.isArray(levelItems) ? levelItems : [levelItems];
+
+      for (const rawItem of currentItems) {
+        if (!rawItem || typeof rawItem !== "object") {
+          continue;
+        }
+
+        const itemRecord = rawItem as Record<string, unknown>;
+        const name = itemRecord.name;
+        if (typeof name !== "string") {
+          continue;
+        }
+
+        const jobPath = [...path, name];
+        if (typeof itemRecord.fullname !== "string" && typeof itemRecord.fullName !== "string") {
+          itemRecord.fullname = jobPath.join("/");
+        }
+
+        const serialized = serializeItem(itemRecord);
+        items.push(serialized);
+
+        const children = itemRecord.jobs;
+        if (Array.isArray(children) && (folderDepth === undefined || level < folderDepth)) {
+          itemStack.push([level + 1, jobPath, children]);
+        }
+      }
+    }
+
+    return items;
+  }
+
+  async getItem(fullname: string, depth = 0): Promise<ItemType> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request("GET", ITEM.call({ folder, name, depth }));
+    return serializeItem(await response.json());
+  }
+
+  async getItemConfig(fullname: string): Promise<string> {
+    const [folder, name] = this.parseFullname(fullname);
+    const response = await this.request("GET", ITEM_CONFIG.call({ folder, name }));
+    return response.text();
+  }
+
+  async setItemConfig(fullname: string, configXml: string): Promise<void> {
+    const [folder, name] = this.parseFullname(fullname);
+    await this.request("POST", ITEM_CONFIG.call({ folder, name }), {
+      headers: Jenkins.DEFAULT_HEADERS,
+      data: configXml
+    });
+  }
+
+  async queryItems(options: {
+    folderDepth?: number;
+    folderDepthPerRequest?: number;
+    classPattern?: string;
+    fullnamePattern?: string;
+    colorPattern?: string;
+  }): Promise<ItemType[]> {
+    const {
+      folderDepth,
+      folderDepthPerRequest = 10,
+      classPattern,
+      fullnamePattern,
+      colorPattern
+    } = options;
+
+    const classRegex = classPattern ? new RegExp(classPattern) : null;
+    const fullnameRegex = fullnamePattern ? new RegExp(fullnamePattern) : null;
+    const colorRegex = colorPattern ? new RegExp(colorPattern) : null;
+
+    const items = await this.getItems(folderDepth, folderDepthPerRequest);
+
+    const result: ItemType[] = [];
+    for (const item of items) {
+      if (classRegex && !classRegex.test(item.class_)) {
+        continue;
+      }
+
+      if (!item.fullname || (fullnameRegex && !fullnameRegex.test(item.fullname))) {
+        continue;
+      }
+
+      if (colorRegex) {
+        if (!isColorItem(item) || !colorRegex.test(item.color)) {
+          continue;
+        }
+      }
+
+      result.push(item);
+    }
+
+    return result;
+  }
+
+  async buildItem(
+    fullname: string,
+    buildType: "build" | "buildWithParameters",
+    params?: Record<string, string | number | boolean>
+  ): Promise<number> {
+    const [folder, name] = this.parseFullname(fullname);
+    const requestOptions: RequestOptions = {};
+    if (params) {
+      requestOptions.params = params;
+    }
+
+    const response = await this.request(
+      "POST",
+      ITEM_BUILD.call({ folder, name, build_type: buildType }),
+      requestOptions
+    );
+
+    const location = response.headers.get("Location");
+    if (!location) {
+      throw new Error("Missing queue location in Jenkins response.");
+    }
+
+    const queueId = Number.parseInt(
+      location.trim().replace(/\/+$/, "").split("/").at(-1) ?? "",
+      10
+    );
+    if (!Number.isFinite(queueId)) {
+      throw new Error(`Invalid queue location: ${location}`);
+    }
+
+    return queueId;
+  }
+}
