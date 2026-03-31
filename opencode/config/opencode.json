@@ -16,7 +16,7 @@
     },
     "jenkins": {
       "type": "remote",
-      "url": "http://jenkins-mcp:3103/sse",
+      "url": "http://jenkins-mcp-spring:8081/sse",
       "enabled": true
     },
     "google-workspace": {

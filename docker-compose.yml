@@ -62,6 +62,8 @@ services:
       - MCP_PORT=8001
     ports:
       - "8001:8001"
+    extra_hosts:
+      - "observability1:192.168.1.80"
     networks:
       - mcp-network
 
@@ -82,26 +84,26 @@ services:
     networks:
       - mcp-network
 
-  # Jenkins MCP Server
-  jenkins-mcp:
-    build:
-      context: ./servers/jenkins-mcp
-      dockerfile: Dockerfile
-    container_name: jenkins-mcp
+  # Jenkins MCP Server (Spring Boot - SSE)
+  jenkins-mcp-spring:
+    image: jenkins-mcp-spring:latest
+    container_name: jenkins-mcp-spring
     environment:
       - JENKINS_URL=${JENKINS_URL}
       - JENKINS_USERNAME=${JENKINS_USERNAME}
-      - JENKINS_PASSWORD=${JENKINS_API_TOKEN}
+      - JENKINS_PASSWORD=${JENKINS_PASSWORD}
       - JENKINS_VERIFY_SSL=${JENKINS_VERIFY_SSL:-false}
-      - TRANSPORT=sse
-      - HOST=0.0.0.0
-      - PORT=3103
     ports:
-      - "3103:3103"
+      - "8081:8081"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+      - "monitor:192.168.1.60"
+    profiles:
+      - jenkins
     networks:
       - mcp-network
 
 networks:
   mcp-network:
-    name: mcp-network
+    name: mcp-server-setup_mcp-network
     driver: bridge

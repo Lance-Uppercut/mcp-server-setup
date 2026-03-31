@@ -1,0 +1,29 @@
+spring:
+  application:
+    name: jenkins-mcp
+  ai:
+    mcp:
+      server:
+        name: jenkins
+        version: 1.0.0
+        type: SYNC
+        annotation-scanner:
+          enabled: true
+      sse:
+        enabled: true
+        message-endpoint: /mcp/sse
+
+server:
+  port: 8081
+
+logging:
+  level:
+    org.springframework.ai: DEBUG
+    com.mcp: DEBUG
+
+jenkins:
+  url: ${JENKINS_URL:http://localhost:8080}
+  username: ${JENKINS_USERNAME:}
+  password: ${JENKINS_PASSWORD:}
+  verify-ssl: ${JENKINS_VERIFY_SSL:true}
+  timeout: 75
