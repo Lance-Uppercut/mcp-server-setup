@@ -82,6 +82,24 @@ services:
     networks:
       - mcp-network
 
+  # Jenkins MCP Server
+  jenkins-mcp:
+    build:
+      context: ./servers/jenkins-mcp
+      dockerfile: Dockerfile
+    container_name: jenkins-mcp
+    environment:
+      - JENKINS_URL=${JENKINS_URL}
+      - JENKINS_USERNAME=${JENKINS_USERNAME}
+      - JENKINS_API_TOKEN=${JENKINS_API_TOKEN}
+      - TRANSPORT=sse
+      - HOST=0.0.0.0
+      - PORT=3103
+    ports:
+      - "3103:3103"
+    networks:
+      - mcp-network
+
 networks:
   mcp-network:
     name: mcp-server-setup_mcp-network

@@ -15,13 +15,8 @@
       "enabled": true
     },
     "jenkins": {
-      "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "-e", "JENKINS_URL", "-e", "JENKINS_USERNAME", "-e", "JENKINS_API_TOKEN", "jenkins-mcp"],
-      "environment": {
-        "JENKINS_URL": "${JENKINS_URL}",
-        "JENKINS_USERNAME": "${JENKINS_USERNAME}",
-        "JENKINS_API_TOKEN": "${JENKINS_API_TOKEN}"
-      },
+      "type": "remote",
+      "url": "http://jenkins-mcp:3103/sse",
       "enabled": true
     },
     "google-workspace": {
