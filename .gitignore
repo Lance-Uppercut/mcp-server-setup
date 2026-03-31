@@ -1,0 +1,33 @@
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Data (tokens, local state)
+data/
+opencode/data/
+opencode/codex/
+
+# Generated configs
+tmp.json
+mcpo-config.json
+
+# Images
+img.png
+
+# OS
+.DS_Store
+Thumbs.db
+
+# MCP Server repos (cloned separately)
+servers/jenkins-mcp/
+servers/mcp-google-workspace/
+servers/yahoo-mail-mcp-server/
+servers/tado-mcp/
+servers/tado-mcp-python/
+servers/mcp-google-workspace;C/
+servers/tado-mcp;C/

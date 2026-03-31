@@ -1,0 +1,40 @@
+# SSH Configuration for MCP Server
+# Add your server entries below
+# See: https://man.openbsd.org/ssh_config.5
+
+# Example servers - replace with your actual servers:
+# 
+ Host jenkins-controller
+     HostName monitor
+     User soerensejr
+     Port 22
+     IdentityFile C:\cygwin64\home\soere\.ssh/id_rsa
+     # Or use a specific key:
+#     IdentityFile ~/.ssh/id_ed25519
+
+# Host database-server
+#     HostName 192.168.1.20
+#     User postgres
+#     Port 2222
+#     IdentityFile C:\cygwin64\home\soere\.ssh/id_rsa
+#     # For jump host/bastion:
+#     ProxyJump bastion.example.com
+# 
+# Host production-server
+#     HostName prod.example.com
+#     User ubuntu
+#     Port 22
+#     IdentityFile ~/.ssh/prod_key
+#     # Disable strict host key checking (use with caution):
+#     # StrictHostKeyChecking no
+#     # Or add to known_hosts:
+#     # UserKnownHostsFile ~/.ssh/known_hosts
+
+# Default settings for all hosts
+Host *
+    # Uncomment and adjust these as needed:
+    # IdentityFile C:\cygwin64\home\soere\.ssh/id_rsa
+    # IdentitiesOnly yes
+    # ServerAliveInterval 60
+    # ServerAliveCountMax 3
+    # ConnectTimeout 30
