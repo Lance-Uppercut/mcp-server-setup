@@ -103,5 +103,5 @@ services:
 
 networks:
   mcp-network:
-    name: mcp-server-setup_mcp-network
+    name: mcp-network
     driver: bridge
