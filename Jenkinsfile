@@ -18,6 +18,28 @@ pipeline {
             }
         }
         
+        stage('Clone missing server repos') {
+            steps {
+                script {
+                    def servers = [
+                        [name: 'yahoo-mail-mcp-server', url: 'https://github.com/Offbeat-IoT/yahoo-mail-mcp-server.git'],
+                        [name: 'tado-mcp-python', url: 'https://github.com/Offbeat-IoT/tado-mcp-python.git'],
+                        [name: 'mcp-google-workspace', url: 'https://github.com/Offbeat-IoT/mcp-google-workspace.git']
+                    ]
+                    servers.each { server ->
+                        sh """
+                            if [ ! -d "servers/${server.name}" ]; then
+                                echo "Cloning ${server.name}..."
+                                git clone ${server.url} servers/${server.name}
+                            else
+                                echo "servers/${server.name} already exists"
+                            fi
+                        """
+                    }
+                }
+            }
+        }
+        
         stage('Build Docker images') {
             steps {
                 sh 'docker compose build'
