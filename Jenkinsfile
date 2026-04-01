@@ -45,11 +45,9 @@ pipeline {
                         def currentContext = service.context
                         echo "Building service ${i+1}/${services.size()}: ${currentImageName} with context: ${currentContext}"
                         buildAndPushImage(
-                            registry: DOCKER_REGISTRY,
-                            context: currentContext,
                             artifactId: currentImageName,
-                            branch: sanitizedBranch,
-                            sha: shortSha
+                            branchName: sanitizedBranch,
+                            gitHash: shortSha
                         )
                     }
                 }
