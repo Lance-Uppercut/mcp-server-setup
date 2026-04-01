@@ -40,11 +40,13 @@ pipeline {
                     
                     for (int i = 0; i < services.size(); i++) {
                         def service = services[i]
-                        echo "Building service ${i+1}/${services.size()}: ${service.imageName} with context: ${service.context}"
+                        def currentImageName = service.imageName
+                        def currentContext = service.context
+                        echo "Building service ${i+1}/${services.size()}: ${currentImageName} with context: ${currentContext}"
                         buildAndPushImage(
                             registry: DOCKER_REGISTRY,
-                            context: service.context,
-                            imageName: service.imageName,
+                            context: currentContext,
+                            imageName: currentImageName,
                             branch: sanitizedBranch,
                             sha: shortSha
                         )
