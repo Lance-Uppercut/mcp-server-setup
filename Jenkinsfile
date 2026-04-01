@@ -26,7 +26,7 @@ pipeline {
             steps {
                 script {
                     def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH ?: env.CHANGE_BRANCH
-                    def sanitizedBranch = io.jenkins.pipeline.TagUtils.sanitizeTag(resolvedBranch ?: 'main')
+                    def sanitizedBranch = io.jenkins.pipeline.TagUtils.sanitizeTag(branchName ?: 'main')
 
                     def shortSha = sh(script: 'git rev-parse --short=5 HEAD', returnStdout: true).trim()
                     
