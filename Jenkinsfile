@@ -49,8 +49,8 @@ pipeline {
                                 artifactId: currentImageName,
                                 branchName: sanitizedBranch,
                                 gitHash: shortSha
-                        )
-
+                            )
+                        }
                     }
                 }
             }
