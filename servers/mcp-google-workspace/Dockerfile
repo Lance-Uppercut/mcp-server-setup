@@ -7,9 +7,8 @@ RUN npm ci --only=production
 
 COPY dist/ ./dist/
 COPY src/ ./src/
-COPY .gauth.json ./
-COPY .accounts.json ./
-COPY .oauth2.*.json ./
+
+RUN touch .gauth.json .accounts.json || true
 
 ENV NODE_ENV=production
 

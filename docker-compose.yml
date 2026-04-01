@@ -67,6 +67,22 @@ services:
     networks:
       - mcp-network
 
+  # Google Workspace MCP Server (SSE mode)
+  google-workspace-mcp:
+    build:
+      context: ./servers/mcp-google-workspace
+      dockerfile: Dockerfile
+    container_name: google-workspace-mcp
+    environment:
+      - TRANSPORT_MODE=sse
+      - PORT=3103
+    ports:
+      - "3103:3103"
+    volumes:
+      - ./data/google-workspace:/app
+    networks:
+      - mcp-network
+
   # Tado MCP Server (SSE mode)
   tado-mcp:
     image: tado-mcp-python:latest

@@ -33,7 +33,7 @@ pipeline {
                     echo "Building branch: ${sanitizedBranch}, SHA: ${shortSha}"
                     
                     def services = [
-                        [imageName: 'mcp-google-workspace', context: './servers/mcp-google-workspace'],
+                        [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server']
                     ]
                     
