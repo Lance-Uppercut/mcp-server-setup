@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'build'
+        label 'build1'
     }
     
     options {
@@ -52,6 +52,23 @@ pipeline {
                             )
                         }
                     }
+                }
+            }
+        }
+        
+        stage('Deploy') {
+            steps {
+                script {
+                    echo "Deploying MCP servers..."
+                    
+                    // Create persistent data directories
+                    sh 'mkdir -p ./data/google-workspace ./data/tado'
+                    
+                    // Pull latest images and start the stack
+                    sh 'docker compose pull'
+                    sh 'docker compose up -d'
+                    
+                    echo "Deployment complete!"
                 }
             }
         }
