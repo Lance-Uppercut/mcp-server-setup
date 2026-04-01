@@ -1,0 +1,4 @@
+* text=auto eol=lf
+
+# Keep Jenkinsfile as LF
+Jenkinsfile text eol=lf

@@ -1,0 +1,24 @@
+# Environment
+.env
+.env.local
+
+# IDE
+.idea/
+.vscode/
+*.swp
+
+# Data (tokens, local state)
+data/
+opencode/data/
+opencode/codex/
+
+# Generated configs
+tmp.json
+mcpo-config.json
+
+# Images
+img.png
+
+# OS
+.DS_Store
+Thumbs.db

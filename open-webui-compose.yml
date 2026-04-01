@@ -1,0 +1,34 @@
+# Open WebUI with MCP Server Integration
+# 
+# This docker-compose extends the main MCP server setup with Open WebUI.
+# Run: docker compose -f docker-compose.yml -f open-webui-compose.yml up -d
+
+services:
+  open-webui:
+    image: ghcr.io/open-webui/open-webui:main
+    container_name: open-webui
+    volumes:
+      - open-webui-data:/app/backend/data
+    ports:
+      - "3001:8080"
+    environment:
+      - OLLAMA_BASE_URL=http://host.docker.internal:11434
+      - WEBUI_SECRET_KEY=change-this-to-a-random-secret
+      - MCP_ENABLE=true
+      # Direct SSE connections to MCP servers
+      - TOOL_SERVER_CONNECTIONS=[
+          {"url":"http://yahoo-mail-mcp:3101","name":"yahoo-mail","type":"sse"},
+          {"url":"http://alertmanager-mcp:8001","name":"alertmanager","type":"sse"}
+        ]
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    networks:
+      - mcp-network
+
+volumes:
+  open-webui-data:
+
+networks:
+  mcp-network:
+    name: mcp-server-setup_mcp-network
+    external: true
