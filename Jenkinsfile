@@ -43,7 +43,7 @@ pipeline {
                         def service = services[i]
                         def currentImageName = service.imageName
                         def currentContext = service.context
-                        echo "Building service ${i+1}/${services.size()}: ${currentImageName} with context: ${currentContext}"
+                        echo "Building service ${i+1}/${services.size()}: ${currentImageName} with branch name: ${sanitizedBranch}"
                         buildAndPushImage(
                             artifactId: currentImageName,
                             branchName: sanitizedBranch,
