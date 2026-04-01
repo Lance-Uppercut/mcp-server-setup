@@ -37,6 +37,7 @@ pipeline {
                     ]
                     
                     services.each { service ->
+                        echo "Building service: ${service.imageName} with context: ${service.context}"
                         buildAndPushImage(
                             registry: DOCKER_REGISTRY,
                             context: service.context,
