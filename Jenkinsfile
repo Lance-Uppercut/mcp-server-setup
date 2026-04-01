@@ -36,8 +36,11 @@ pipeline {
                         [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server']
                     ]
                     
-                    services.each { service ->
-                        echo "Building service: ${service.imageName} with context: ${service.context}"
+                    echo "Services to build: ${services.collect { it.imageName }.join(', ')}"
+                    
+                    for (int i = 0; i < services.size(); i++) {
+                        def service = services[i]
+                        echo "Building service ${i+1}/${services.size()}: ${service.imageName} with context: ${service.context}"
                         buildAndPushImage(
                             registry: DOCKER_REGISTRY,
                             context: service.context,
