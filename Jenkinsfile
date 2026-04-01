@@ -1,3 +1,5 @@
+@Library("shared-jenkins-pipelines") _
+
 pipeline {
     agent {
         label 'build'
@@ -11,7 +13,6 @@ pipeline {
     
     environment {
         DOCKER_REGISTRY = 'registry:5000'
-        DOCKER_CREDENTIALS_ID = 'registry-credentials'
     }
     
     stages {
@@ -30,26 +31,19 @@ pipeline {
                     
                     echo "Building branch: ${sanitizedBranch}, SHA: ${shortSha}"
                     
-                    withCredentials([usernamePassword(credentialsId: DOCKER_CREDENTIALS_ID, usernameVariable: 'DOCKER_USER', passwordVariable: 'DOCKER_PASS')]) {
-                        sh "docker login ${DOCKER_REGISTRY} --username \$DOCKER_USER --password \$DOCKER_PASS"
-                        
-                        def services = [
-                            [name: 'tado-mcp-python', context: './servers/tado-mcp-python'],
-                            [name: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
-                        ]
-                        
-                        services.each { service ->
-                            sh """
-                                docker buildx inspect mcp-builder >/dev/null 2>&1 || docker buildx create --name mcp-builder --driver docker-container --use
-                                docker buildx use mcp-builder
-                                
-                                docker buildx build --pull --push \
-                                    -t ${DOCKER_REGISTRY}/${service.name}:${sanitizedBranch} \
-                                    -t ${DOCKER_REGISTRY}/${service.name}:${shortSha} \
-                                    -t ${DOCKER_REGISTRY}/${service.name}:latest \
-                                    ${service.context}
-                            """
-                        }
+                    def services = [
+                        [name: 'tado-mcp-python', context: './servers/tado-mcp-python'],
+                        [name: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
+                    ]
+                    
+                    services.each { service ->
+                        buildAndPushImage(
+                            registry: DOCKER_REGISTRY,
+                            context: service.context,
+                            name: service.name,
+                            branch: sanitizedBranch,
+                            sha: shortSha
+                        )
                     }
                 }
             }
