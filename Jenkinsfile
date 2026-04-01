@@ -32,8 +32,8 @@ pipeline {
                     echo "Building branch: ${sanitizedBranch}, SHA: ${shortSha}"
                     
                     def services = [
-                        [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python'],
-                        [imageName: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
+                        [imageName: 'mcp-google-workspace', context: './servers/mcp-google-workspace'],
+                        [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server']
                     ]
                     
                     services.each { service ->
