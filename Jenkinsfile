@@ -64,9 +64,17 @@ pipeline {
                     // Create persistent data directories
                     sh 'mkdir -p ./data/google-workspace ./data/tado'
                     
-                    // Pull latest images and start the stack
-                    sh 'docker compose pull'
-                    sh 'docker compose up -d'
+                    // Stop any existing containers first
+                    sh script: 'docker compose down --remove-orphans', returnStatus: true
+                    
+                    // Pull latest images and start the stack with timeout
+                    timeout(time: 5, unit: 'MINUTES') {
+                        sh 'docker compose pull'
+                        sh 'docker compose up -d'
+                    }
+                    
+                    // Show running containers
+                    sh 'docker compose ps'
                     
                     echo "Deployment complete!"
                 }
