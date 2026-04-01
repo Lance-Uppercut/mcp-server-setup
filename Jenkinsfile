@@ -32,15 +32,15 @@ pipeline {
                     echo "Building branch: ${sanitizedBranch}, SHA: ${shortSha}"
                     
                     def services = [
-                        [name: 'tado-mcp-python', context: './servers/tado-mcp-python'],
-                        [name: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
+                        [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python'],
+                        [imageName: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
                     ]
                     
                     services.each { service ->
                         buildAndPushImage(
                             registry: DOCKER_REGISTRY,
                             context: service.context,
-                            name: service.name,
+                            imageName: service.name,
                             branch: sanitizedBranch,
                             sha: shortSha
                         )
