@@ -10,7 +10,8 @@ pipeline {
     }
     
     environment {
-        DOCKER_REGISTRY = 'registry.hub.docker.com/soerendel'
+        DOCKER_REGISTRY = 'registry.hub.docker.com'
+        DOCKER_NAMESPACE = 'soerendel'
         DOCKER_CREDENTIALS_ID = 'docker-hub-credentials'
     }
     
@@ -21,36 +22,39 @@ pipeline {
             }
         }
         
-        stage('Build Docker images') {
+        stage('Build and Push Docker images') {
             steps {
                 script {
-                    def branchName = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9]', '-')
+                    def branchName = env.BRANCH_NAME
+                    def sanitizedBranch = branchName.toLowerCase().replaceAll(/[^a-z0-9_.-]/, '-')
                     def shortSha = sh(script: 'git rev-parse --short=5 HEAD', returnStdout: true).trim()
-                    def tag = "${branchName}-${shortSha}"
+                    def gitHash = sh(script: 'git rev-parse HEAD', returnStdout: true).trim()
                     
-                    sh """
-                        docker compose build
-                        docker tag jenkins-mcp-spring:latest \${DOCKER_REGISTRY}/jenkins-mcp-spring:${tag}
-                        docker tag tado-mcp-python:latest \${DOCKER_REGISTRY}/tado-mcp-python:${tag}
-                        docker tag alertmanager-mcp:latest \${DOCKER_REGISTRY}/alertmanager-mcp:${tag}
-                    """
-                }
-            }
-        }
-        
-        stage('Push Docker images') {
-            steps {
-                script {
-                    def branchName = env.BRANCH_NAME.replaceAll('[^a-zA-Z0-9]', '-')
-                    def shortSha = sh(script: 'git rev-parse --short=5 HEAD', returnStdout: true).trim()
-                    def tag = "${branchName}-${shortSha}"
+                    echo "Building branch: ${sanitizedBranch}, SHA: ${shortSha}"
                     
                     withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
-                        sh """
-                            docker push \${DOCKER_REGISTRY}/jenkins-mcp-spring:${tag}
-                            docker push \${DOCKER_REGISTRY}/tado-mcp-python:${tag}
-                            docker push \${DOCKER_REGISTRY}/alertmanager-mcp:${tag}
-                        """
+                        def services = [
+                            [name: 'jenkins-mcp-spring', context: './servers/jenkins-mcp-spring'],
+                            [name: 'tado-mcp-python', context: './servers/tado-mcp-python'],
+                            [name: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
+                        ]
+                        
+                        services.each { service ->
+                            def imageName = "${DOCKER_NAMESPACE}/${service.name}"
+                            
+                            sh """
+                                docker buildx inspect codex-builder >/dev/null 2>&1 || docker buildx create --name codex-builder --driver docker-container --use
+                                docker buildx use codex-builder
+                                
+                                docker buildx build --pull --push \
+                                    --platform linux/amd64,linux/arm64 \
+                                    -t ${DOCKER_REGISTRY}/${imageName}:${sanitizedBranch} \
+                                    -t ${DOCKER_REGISTRY}/${imageName}:${shortSha} \
+                                    -t ${DOCKER_REGISTRY}/${imageName}:${gitHash} \
+                                    -t ${DOCKER_REGISTRY}/${imageName}:latest \
+                                    ${service.context}
+                            """
+                        }
                     }
                 }
             }
