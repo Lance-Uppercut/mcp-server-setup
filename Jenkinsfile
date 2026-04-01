@@ -40,7 +40,7 @@ pipeline {
                         buildAndPushImage(
                             registry: DOCKER_REGISTRY,
                             context: service.context,
-                            imageName: service.name,
+                            imageName: service.imageName,
                             branch: sanitizedBranch,
                             sha: shortSha
                         )
