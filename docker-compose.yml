@@ -84,25 +84,6 @@ services:
     networks:
       - mcp-network
 
-  # Jenkins MCP Server (Spring Boot - SSE)
-  jenkins-mcp-spring:
-    image: jenkins-mcp-spring:latest
-    container_name: jenkins-mcp-spring
-    environment:
-      - JENKINS_URL=${JENKINS_URL}
-      - JENKINS_USERNAME=${JENKINS_USERNAME}
-      - JENKINS_PASSWORD=${JENKINS_PASSWORD}
-      - JENKINS_VERIFY_SSL=${JENKINS_VERIFY_SSL:-false}
-    ports:
-      - "8081:8081"
-    extra_hosts:
-      - "host.docker.internal:host-gateway"
-      - "monitor:192.168.1.60"
-    profiles:
-      - jenkins
-    networks:
-      - mcp-network
-
 networks:
   mcp-network:
     name: mcp-server-setup_mcp-network

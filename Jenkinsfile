@@ -34,7 +34,6 @@ pipeline {
                     
                     withDockerRegistry([credentialsId: DOCKER_CREDENTIALS_ID, url: 'https://index.docker.io/v1/']) {
                         def services = [
-                            [name: 'jenkins-mcp-spring', context: './servers/jenkins-mcp-spring'],
                             [name: 'tado-mcp-python', context: './servers/tado-mcp-python'],
                             [name: 'yahoo-mail-mcp', context: './servers/yahoo-mail-mcp-server']
                         ]
