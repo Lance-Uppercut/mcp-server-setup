@@ -25,8 +25,9 @@ pipeline {
         stage('Build and Push Docker images') {
             steps {
                 script {
-                    def branchName = env.BRANCH_NAME
-                    def sanitizedBranch = branchName.toLowerCase().replaceAll(/[^a-z0-9_.-]/, '-')
+                    def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH ?: env.CHANGE_BRANCH
+                    def sanitizedBranch = io.jenkins.pipeline.TagUtils.sanitizeTag(resolvedBranch ?: 'main')
+
                     def shortSha = sh(script: 'git rev-parse --short=5 HEAD', returnStdout: true).trim()
                     
                     echo "Building branch: ${sanitizedBranch}, SHA: ${shortSha}"
