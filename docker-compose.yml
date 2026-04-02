@@ -35,9 +35,7 @@ services:
 
   # Yahoo Mail MCP Server (SSE mode)
   yahoo-mail-mcp:
-    build:
-      context: ./servers/yahoo-mail-mcp-server
-      dockerfile: Dockerfile
+    image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
     container_name: yahoo-mail-mcp
     environment:
       - YAHOO_EMAIL=${YAHOO_EMAIL}
