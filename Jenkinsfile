@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'build'
+        label 'build1'
     }
     
     options {
@@ -58,9 +58,6 @@ pipeline {
         }
         
         stage('Deploy') {
-            agent {
-                label 'build1'
-            }
 
             steps {
                 script {
