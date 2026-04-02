@@ -35,9 +35,7 @@ services:
 
   # Yahoo Mail MCP Server (SSE mode)
   yahoo-mail-mcp:
-    build:
-      context: ./servers/yahoo-mail-mcp-server
-      dockerfile: Dockerfile
+    image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
     container_name: yahoo-mail-mcp
     environment:
       - YAHOO_EMAIL=${YAHOO_EMAIL}
@@ -69,10 +67,10 @@ services:
 
   # Google Workspace MCP Server (SSE mode)
   google-workspace-mcp:
+    image: registry:5000/offbeat-iot/google-workspace-mcp:latest
     build:
       context: ./servers/mcp-google-workspace
       dockerfile: Dockerfile
-    container_name: google-workspace-mcp
     environment:
       - TRANSPORT_MODE=sse
       - PORT=3103
@@ -85,7 +83,7 @@ services:
 
   # Tado MCP Server (SSE mode)
   tado-mcp:
-    image: tado-mcp-python:latest
+    image: registry:5000/offbeat-iot/tado-mcp-python:latest
     container_name: tado-mcp
     build:
       context: ./servers/tado-mcp-python

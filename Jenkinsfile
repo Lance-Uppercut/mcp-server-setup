@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'build'
+        label 'build1'
     }
     
     options {
@@ -34,7 +34,8 @@ pipeline {
                     
                     def services = [
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
-                        [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server']
+                        [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server'],
+                        [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python']
                     ]
                     
                     echo "Services to build: ${services.collect { it.imageName }.join(', ')}"
@@ -52,6 +53,32 @@ pipeline {
                             )
                         }
                     }
+                }
+            }
+        }
+        
+        stage('Deploy') {
+
+            steps {
+                script {
+                    echo "Deploying MCP servers..."
+                    
+                    // Create persistent data directories
+                    sh 'mkdir -p ./data/google-workspace ./data/tado'
+                    
+                    // Stop any existing containers first
+                    sh script: 'docker compose down --remove-orphans', returnStatus: true
+                    
+                    // Pull latest images and start the stack with timeout
+                    timeout(time: 5, unit: 'MINUTES') {
+                        sh 'docker compose pull'
+                        sh 'docker compose up -d'
+                    }
+                    
+                    // Show running containers
+                    sh 'docker compose ps'
+                    
+                    echo "Deployment complete!"
                 }
             }
         }
