@@ -34,7 +34,8 @@ pipeline {
                     
                     def services = [
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
-                        [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server']
+                        [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server'],
+                        [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python']
                     ]
                     
                     echo "Services to build: ${services.collect { it.imageName }.join(', ')}"
