@@ -2,7 +2,7 @@
 
 pipeline {
     agent {
-        label 'build1'
+        label 'build'
     }
     
     options {
@@ -58,6 +58,10 @@ pipeline {
         }
         
         stage('Deploy') {
+            agent {
+                label 'build1'
+            }
+
             steps {
                 script {
                     echo "Deploying MCP servers..."
