@@ -98,6 +98,22 @@ services:
     networks:
       - mcp-network
 
+  # Todoist MCP Server
+  todoist-mcp:
+    image: registry:5000/offbeat-iot/todoist-mcp:latest
+    container_name: todoist-mcp
+    build:
+      context: ./servers/todoist-mcp
+      dockerfile: Dockerfile
+    environment:
+      - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3104
+    ports:
+      - "3104:3104"
+    networks:
+      - mcp-network
+
 networks:
   mcp-network:
     name: mcp-server-setup_mcp-network
