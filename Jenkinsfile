@@ -36,7 +36,8 @@ pipeline {
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server'],
                         [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python'],
-                        [imageName: 'todoist-mcp', context: './servers/todoist-mcp']
+                        [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
+                        [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp']
                     ]
                     
                     echo "Services to build: ${services.collect { it.imageName }.join(', ')}"

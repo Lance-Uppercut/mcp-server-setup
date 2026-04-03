@@ -114,6 +114,26 @@ services:
     networks:
       - mcp-network
 
+  # ASUS Router MCP Server
+  asus-router-mcp:
+    image: registry:5000/offbeat-iot/asus-router-mcp:latest
+    container_name: asus-router-mcp
+    build:
+      context: ./servers/asus-router-mcp
+      dockerfile: Dockerfile
+    environment:
+      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
+      - ROUTER_PASSWORD=${ROUTER_PASSWORD}
+      - USE_SSL=${USE_SSL:-true}
+      - TRANSPORT_MODE=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3105
+    ports:
+      - "3105:3105"
+    networks:
+      - mcp-network
+
 networks:
   mcp-network:
     name: mcp-server-setup_mcp-network
