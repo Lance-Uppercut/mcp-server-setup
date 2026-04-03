@@ -27,16 +27,22 @@ except ImportError:
     print("Warning: asusrouter library not installed", file=__import__('sys').stderr)
 
 router_instance = None
+router_connected = False
 
 async def get_router():
-    global router_instance
-    if router_instance:
-        return router_instance
+    global router_instance, router_connected
+    
+    if router_instance and router_connected:
+        try:
+            await router_instance.async_connect()
+            return router_instance
+        except Exception as e:
+            print(f"Router reconnection failed: {e}, will reconnect", file=__import__('sys').stderr)
+            router_connected = False
     
     if not ASUSROUTER_AVAILABLE:
         raise RuntimeError("asusrouter library not available")
     
-    loop = asyncio.get_event_loop()
     session = httpx.AsyncClient()
     
     router_instance = AsusRouter(
@@ -48,6 +54,8 @@ async def get_router():
     )
     
     await router_instance.async_connect()
+    router_connected = True
+    print(f"Connected to ASUS router at {ROUTER_HOST}", file=__import__('sys').stderr)
     return router_instance
 
 @server.list_tools()
