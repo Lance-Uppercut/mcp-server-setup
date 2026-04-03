@@ -20,7 +20,7 @@ ROUTER_PASSWORD = os.environ.get("ROUTER_PASSWORD", "")
 USE_SSL = os.environ.get("USE_SSL", "true").lower() == "true"
 
 try:
-    from asusrouter import AsusRouter, AsusData
+    from asusrouter import AsusRouter, AsusData, AsusWLAN, AsusGWLAN
     ASUSROUTER_AVAILABLE = True
 except ImportError:
     ASUSROUTER_AVAILABLE = False
@@ -78,6 +78,54 @@ async def list_tools():
             description="Get network statistics (WAN LAN WiFi)",
             inputSchema={"type": "object", "properties": {}}
         ),
+        Tool(
+            name="get_wlan_status",
+            description="Get WiFi radio status for all bands",
+            inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="get_guest_wifi_status",
+            description="Get guest WiFi network status",
+            inputSchema={"type": "object", "properties": {}}
+        ),
+        Tool(
+            name="set_guest_wifi",
+            description="Enable or disable a guest WiFi network",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enable": {"type": "boolean", "description": "True to enable, False to disable"},
+                    "band": {"type": "string", "description": "Band: '2.4GHz' or '5GHz'"},
+                    "guest_number": {"type": "integer", "description": "Guest network number (1-3)", "default": 1}
+                },
+                "required": ["enable"]
+            }
+        ),
+        Tool(
+            name="set_wifi_radio",
+            description="Enable or disable a WiFi radio band",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enable": {"type": "boolean", "description": "True to enable, False to disable"},
+                    "band": {"type": "string", "description": "Band: '2.4GHz' or '5GHz'"}
+                },
+                "required": ["enable", "band"]
+            }
+        ),
+        Tool(
+            name="set_wifi_hidden",
+            description="Hide (disable SSID broadcast) or show a WiFi network",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "hidden": {"type": "boolean", "description": "True to hide SSID (not broadcast), False to show"},
+                    "band": {"type": "string", "description": "Band: '2.4GHz' or '5GHz'"},
+                    "ssid_number": {"type": "integer", "description": "SSID number (typically 1 for main)", "default": 1}
+                },
+                "required": ["hidden"]
+            }
+        ),
     ]
 
 @server.call_tool()
@@ -103,6 +151,50 @@ async def call_tool(name: str, arguments: dict):
         elif name == "get_network_stats":
             data = await router.async_get_data(AsusData.NETWORK)
             result = data
+        elif name == "get_wlan_status":
+            data = await router.async_get_data(AsusData.WLAN)
+            result = data
+        elif name == "get_guest_wifi_status":
+            data = await router.async_get_data(AsusData.GWLAN)
+            result = data
+        elif name == "set_guest_wifi":
+            enable = arguments.get("enable")
+            band = arguments.get("band", "2.4GHz")
+            guest_number = arguments.get("guest_number", 1)
+            
+            api_id = f"{guest_number}.1" if band == "2.4GHz" else f"{guest_number}.2"
+            
+            state = AsusGWLAN.ON if enable else AsusGWLAN.OFF
+            result = await router.async_set_state(
+                state,
+                arguments={"api_type": "gwlan", "api_id": api_id}
+            )
+            result = {"success": result, "message": f"Guest WiFi {'enabled' if enable else 'disabled'}"}
+        elif name == "set_wifi_radio":
+            enable = arguments.get("enable")
+            band = arguments.get("band", "2.4GHz")
+            
+            if band == "2.4GHz":
+                state = AsusWLAN.ON if enable else AsusWLAN.OFF
+            else:
+                state = AsusWLAN.ON_5G if enable else AsusWLAN.OFF_5G
+            
+            result = await router.async_set_state(state)
+            result = {"success": result, "message": f"WiFi radio {band} {'enabled' if enable else 'disabled'}"}
+        elif name == "set_wifi_hidden":
+            hidden = arguments.get("hidden")
+            band = arguments.get("band", "2.4GHz")
+            ssid_number = arguments.get("ssid_number", 1)
+            
+            state = AsusWLAN.HIDDEN if hidden else AsusWLAN.VISIBLE
+            
+            api_id = f"{ssid_number - 1}" if band == "2.4GHz" else f"{ssid_number - 1}_5G"
+            
+            result = await router.async_set_state(
+                state,
+                arguments={"api_id": api_id}
+            )
+            result = {"success": result, "message": f"WiFi SSID {'hidden' if hidden else 'visible'} on {band}"}
         else:
             return {"isError": True, "content": [{"type": "text", "text": f"Unknown tool: {name}"}]}
         
