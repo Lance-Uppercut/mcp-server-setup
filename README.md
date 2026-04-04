@@ -14,6 +14,8 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | GitHub | github-mcp-server | - | stdio | Claude Desktop only |
 | Jenkins | mcpland/jenkins-mcp | - | stdio | Claude Desktop only |
 | Tado | Custom Python MCP (local) | - | stdio | Claude Desktop only |
+| Playwright | Microsoft Playwright MCP | 3106 | SSE | http://localhost:3106/sse |
+| Portainer (6 servers) | portainer/portainer-mcp | - | stdio | `docker compose run --rm portainer-{server}` |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
 
@@ -277,3 +279,19 @@ networks:
 2. Go to Settings → Account → Personal Settings
 3. Create OAuth credentials via the Tado Developer Portal (or use existing client ID/secret)
 4. Note: As of 2025, Tado uses OAuth2 device flow for authentication
+
+### Playwright
+See [Microsoft Playwright MCP Server](https://github.com/microsoft/playwright-mcp) for documentation.
+
+### Portainer
+See [Portainer MCP Server](https://github.com/portainer/portainer-mcp) for documentation.
+
+Available servers (use with `docker compose run --rm portainer-{server}`):
+- `portainer-build1` - http://build1.home:6500
+- `portainer-build2` - http://build2.home:6500
+- `portainer-monitor` - http://192.168.1.60:6500
+- `portainer-observability1` - http://192.168.1.80:6500
+- `portainer-tools1` - http://192.168.1.17:6500
+- `portainer-production1` - http://192.168.1.85:6500
+
+Set `PORTAINER_{SERVER}_TOKEN` in `.env` file.

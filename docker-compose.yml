@@ -98,6 +98,127 @@ services:
     networks:
       - mcp-network
 
+  # Todoist MCP Server
+  todoist-mcp:
+    image: registry:5000/offbeat-iot/todoist-mcp:latest
+    container_name: todoist-mcp
+    build:
+      context: ./servers/todoist-mcp
+      dockerfile: Dockerfile
+    environment:
+      - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3104
+    ports:
+      - "3104:3104"
+    networks:
+      - mcp-network
+
+  # ASUS Router MCP Server
+  asus-router-mcp:
+    image: registry:5000/offbeat-iot/asus-router-mcp:latest
+    container_name: asus-router-mcp
+    build:
+      context: ./servers/asus-router-mcp
+      dockerfile: Dockerfile
+    environment:
+      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
+      - ROUTER_PASSWORD=${ROUTER_PASSWORD}
+      - USE_SSL=${USE_SSL:-true}
+      - TRANSPORT_MODE=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3105
+    ports:
+      - "3105:3105"
+    networks:
+      - mcp-network
+
+  # Playwright MCP Server
+  playwright-mcp:
+    image: mcr.microsoft.com/playwright/mcp:latest
+    container_name: playwright-mcp
+    environment:
+      - PLAYWRIGHT_MCP_HOST=0.0.0.0
+      - PLAYWRIGHT_MCP_PORT=3106
+    ports:
+      - "3106:3106"
+    volumes:
+      - ./data/playwright:/home/user
+    networks:
+      - mcp-network
+
+  # Portainer MCP Servers (stdio transport - use docker compose run --rm portainer-{server})
+  portainer-build1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    container_name: portainer-build1
+    environment:
+      - PORTAINER_SERVER=http://build1.home:6500
+      - PORTAINER_TOKEN=${PORTAINER_BUILD1_TOKEN}
+    extra_hosts:
+      - "build1.home:192.168.1.10"
+    profiles:
+      - portainer
+    networks:
+      - mcp-network
+
+  portainer-build2:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    container_name: portainer-build2
+    environment:
+      - PORTAINER_SERVER=http://build2.home:6500
+      - PORTAINER_TOKEN=${PORTAINER_BUILD2_TOKEN}
+    extra_hosts:
+      - "build2.home:192.168.1.11"
+    profiles:
+      - portainer
+    networks:
+      - mcp-network
+
+  portainer-monitor:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    container_name: portainer-monitor
+    environment:
+      - PORTAINER_SERVER=http://192.168.1.60:6500
+      - PORTAINER_TOKEN=${PORTAINER_MONITOR_TOKEN}
+    profiles:
+      - portainer
+    networks:
+      - mcp-network
+
+  portainer-observability1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    container_name: portainer-observability1
+    environment:
+      - PORTAINER_SERVER=http://192.168.1.80:6500
+      - PORTAINER_TOKEN=${PORTAINER_OBSERVABILITY1_TOKEN}
+    profiles:
+      - portainer
+    networks:
+      - mcp-network
+
+  portainer-tools1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    container_name: portainer-tools1
+    environment:
+      - PORTAINER_SERVER=http://192.168.1.17:6500
+      - PORTAINER_TOKEN=${PORTAINER_TOOLS1_TOKEN}
+    profiles:
+      - portainer
+    networks:
+      - mcp-network
+
+  portainer-production1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    container_name: portainer-production1
+    environment:
+      - PORTAINER_SERVER=http://192.168.1.85:6500
+      - PORTAINER_TOKEN=${PORTAINER_PRODUCTION1_TOKEN}
+    profiles:
+      - portainer
+    networks:
+      - mcp-network
+
 networks:
   mcp-network:
     name: mcp-server-setup_mcp-network

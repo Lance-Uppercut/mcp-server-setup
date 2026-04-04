@@ -35,7 +35,9 @@ pipeline {
                     def services = [
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server'],
-                        [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python']
+                        [imageName: 'tado-mcp-python', context: './servers/tado-mcp-python'],
+                        [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
+                        [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp']
                     ]
                     
                     echo "Services to build: ${services.collect { it.imageName }.join(', ')}"
@@ -64,7 +66,7 @@ pipeline {
                     echo "Deploying MCP servers..."
                     
                     // Create persistent data directories
-                    sh 'mkdir -p ./data/google-workspace ./data/tado'
+                    sh 'mkdir -p ./data/google-workspace ./data/tado ./data/playwright'
                     
                     // Stop any existing containers first
                     sh script: 'docker compose down --remove-orphans', returnStatus: true

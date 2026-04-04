@@ -1,3 +1,3 @@
-[] configure Todoist mcp server
-[] create mcp server wrapper for this https://github.com/Vaskivskyi/asusrouter so we can configure the two ac68u routers
-   [] end goal is to have neiter expose the wifi network
+[] configure Todoist mcp server - DONE
+[] create mcp server wrapper for this https://github.com/Vaskivskyi/asusrouter - DONE
+   [] end goal is to have neiter expose the wifi network - Use set_wifi_hidden tool
