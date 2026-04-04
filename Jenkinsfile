@@ -66,7 +66,7 @@ pipeline {
                     echo "Deploying MCP servers..."
                     
                     // Create persistent data directories
-                    sh 'mkdir -p ./data/google-workspace ./data/tado'
+                    sh 'mkdir -p ./data/google-workspace ./data/tado ./data/playwright'
                     
                     // Stop any existing containers first
                     sh script: 'docker compose down --remove-orphans', returnStatus: true
