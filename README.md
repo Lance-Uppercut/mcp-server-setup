@@ -14,6 +14,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | GitHub | github-mcp-server | - | stdio | Claude Desktop only |
 | Jenkins | mcpland/jenkins-mcp | - | stdio | Claude Desktop only |
 | Tado | Custom Python MCP (local) | - | stdio | Claude Desktop only |
+| Playwright | Microsoft Playwright MCP | 3106 | SSE | http://localhost:3106/sse |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
 
@@ -277,3 +278,6 @@ networks:
 2. Go to Settings → Account → Personal Settings
 3. Create OAuth credentials via the Tado Developer Portal (or use existing client ID/secret)
 4. Note: As of 2025, Tado uses OAuth2 device flow for authentication
+
+### Playwright
+See [Microsoft Playwright MCP Server](https://github.com/microsoft/playwright-mcp) for documentation.
