@@ -1,8 +1,5 @@
 @Library("shared-jenkins-pipelines") _
 
-import groovy.json.JsonOutput
-import groovy.json.JsonSlurperClassic
-
 def quoteEnvValue(String value) {
     '"' + (value ?: '')
         .replace('\\', '\\\\')
@@ -122,37 +119,50 @@ pipeline {
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
                         sh 'chmod 600 ./runtime-secrets/runtime.env'
 
-                        sh """
-                            install -m 600 '${env.SECRET_GOOGLE_GAUTH_FILE}' './data/google-workspace/.gauth.json'
-                            install -m 600 '${env.SECRET_GOOGLE_ACCOUNTS_FILE}' './data/google-workspace/.accounts.json'
-                        """
+                        sh '''
+                            install -m 600 "$SECRET_GOOGLE_GAUTH_FILE" "./data/google-workspace/.gauth.json"
+                            install -m 600 "$SECRET_GOOGLE_ACCOUNTS_FILE" "./data/google-workspace/.accounts.json"
+                        '''
 
-                        def googleOAuthSeed = readFile(env.SECRET_GOOGLE_OAUTH2_SEED_FILE).trim()
-                        if (googleOAuthSeed) {
-                            def parsedSeed = new JsonSlurperClassic().parseText(googleOAuthSeed)
-                            if (!(parsedSeed instanceof Map)) {
-                                error('Credential mcp-google-oauth2-seed-json must contain a JSON object keyed by .oauth2.*.json filenames.')
-                            }
+                        sh '''
+                            python3 - <<'PY'
+import json
+import os
+from pathlib import Path
 
-                            parsedSeed.each { filename, tokenPayload ->
-                                if (!(filename instanceof String) || !filename.startsWith('.oauth2.') || !filename.endsWith('.json')) {
-                                    error("Invalid Google OAuth seed filename: ${filename}")
-                                }
+seed_path = os.environ.get("SECRET_GOOGLE_OAUTH2_SEED_FILE")
+if not seed_path or not os.path.exists(seed_path):
+    raise SystemExit(0)
 
-                                def targetPath = "./data/google-workspace/credentials/${filename}"
-                                if (!fileExists(targetPath)) {
-                                    def renderedPayload = tokenPayload instanceof String
-                                        ? tokenPayload
-                                        : JsonOutput.prettyPrint(JsonOutput.toJson(tokenPayload))
-                                    writeFile(
-                                        file: targetPath,
-                                        text: renderedPayload.endsWith('\n') ? renderedPayload : "${renderedPayload}\n"
-                                    )
-                                    sh "chmod 600 '${targetPath}'"
-                                    echo "Seeded Google OAuth credentials at ${targetPath}"
-                                }
-                            }
-                        }
+raw = Path(seed_path).read_text().strip()
+if not raw:
+    raise SystemExit(0)
+
+try:
+    parsed = json.loads(raw)
+except Exception as exc:
+    raise SystemExit(f"Invalid mcp-google-oauth2-seed-json content: {exc}")
+
+if not isinstance(parsed, dict):
+    raise SystemExit("Credential mcp-google-oauth2-seed-json must be a JSON object keyed by .oauth2.*.json filenames.")
+
+base = Path("./data/google-workspace/credentials")
+base.mkdir(parents=True, exist_ok=True)
+
+for filename, payload in parsed.items():
+    if not isinstance(filename, str) or not filename.startswith(".oauth2.") or not filename.endswith(".json"):
+        raise SystemExit(f"Invalid Google OAuth seed filename: {filename}")
+    target = base / filename
+    if target.exists():
+        continue
+    rendered = payload if isinstance(payload, str) else json.dumps(payload, indent=2)
+    if not rendered.endswith("\\n"):
+        rendered += "\\n"
+    target.write_text(rendered)
+    os.chmod(target, 0o600)
+    print(f"Seeded Google OAuth credentials at {target}")
+PY
+                        '''
 
                         if (!fileExists('./data/tado/tokens.json')) {
                             sh "install -m 600 '${env.SECRET_TADO_TOKENS_FILE}' './data/tado/tokens.json'"
