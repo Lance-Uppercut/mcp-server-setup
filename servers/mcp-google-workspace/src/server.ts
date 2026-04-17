@@ -12,6 +12,7 @@ dotenv.config();
 
 import { Server } from "@modelcontextprotocol/sdk/server/index.js";
 import { StdioServerTransport } from "@modelcontextprotocol/sdk/server/stdio.js";
+import { SSEServerTransport } from "@modelcontextprotocol/sdk/server/sse.js";
 import { ListToolsRequestSchema, CallToolRequestSchema } from "@modelcontextprotocol/sdk/types.js";
 import { GmailTools } from './tools/gmail.js';
 import { CalendarTools } from './tools/calendar.js';
@@ -73,16 +74,20 @@ class OAuthServer {
 class GoogleWorkspaceServer {
   private server: Server;
   private gauth: GAuthService;
+  private transportMode: 'stdio' | 'sse';
+  private port: number;
   private tools!: {
     gmail: GmailTools;
     calendar: CalendarTools;
   };
 
-  constructor(config: ServerConfig) {
+  constructor(config: ServerConfig, transportMode: 'stdio' | 'sse', port: number) {
     logger.info('Starting Google Workspace MCP Server...');
 
     // Initialize services
     this.gauth = new GAuthService(config);
+    this.transportMode = transportMode;
+    this.port = port;
     
     // Initialize server
     this.server = new Server(
@@ -120,6 +125,9 @@ class GoogleWorkspaceServer {
 
     let credentials = await this.gauth.getStoredCredentials(userId);
     if (!credentials) {
+      if (this.transportMode === 'sse') {
+        throw new Error("No stored credentials found. Seed OAuth files in credentials directory before using SSE mode.");
+      }
       await this.startAuthFlow(userId);
     } else {
       const tokens = credentials.credentials;
@@ -244,6 +252,55 @@ class GoogleWorkspaceServer {
     });
   }
 
+  private async startSseServer() {
+    const sessions: Record<string, SSEServerTransport> = {};
+    const httpServer = createServer(async (req, res) => {
+      const url = parseUrl(req.url || '', true);
+
+      if (req.method === 'GET' && url.pathname === '/sse') {
+        const transport = new SSEServerTransport('/messages', res);
+        sessions[transport.sessionId] = transport;
+        res.on('close', () => {
+          delete sessions[transport.sessionId];
+        });
+
+        try {
+          await this.server.connect(transport);
+          await transport.start();
+        } catch (error) {
+          logger.error("SSE connection error:", error as Error);
+        }
+        return;
+      }
+
+      if (req.method === 'POST' && url.pathname === '/messages') {
+        const sessionId = url.query.sessionId as string | undefined;
+        if (!sessionId || !sessions[sessionId]) {
+          res.writeHead(400).end('Invalid or missing sessionId');
+          return;
+        }
+        await sessions[sessionId].handlePostMessage(req, res);
+        return;
+      }
+
+      if (req.method === 'GET' && url.pathname === '/health') {
+        res.writeHead(200, { 'Content-Type': 'application/json' });
+        res.end(JSON.stringify({ status: 'ok', transport: 'sse', port: this.port }));
+        return;
+      }
+
+      res.writeHead(404).end();
+    });
+
+    await new Promise<void>((resolve, reject) => {
+      httpServer.once('error', reject);
+      httpServer.listen(this.port, '0.0.0.0', () => {
+        logger.info(`SSE server listening on port ${this.port}`);
+        resolve();
+      });
+    });
+  }
+
   async start() {
     try {
       // Initialize OAuth2 client first
@@ -261,11 +318,16 @@ class GoogleWorkspaceServer {
         }
       }
 
-      // Start server
+      if (this.transportMode === 'sse') {
+        await this.startSseServer();
+        logger.info('Server ready in SSE mode');
+        return;
+      }
+
       const transport = new StdioServerTransport();
-      logger.info('Connecting to transport...');
+      logger.info('Connecting to stdio transport...');
       await this.server.connect(transport);
-      logger.info('Server ready!');
+      logger.info('Server ready in stdio mode');
     } catch (error) {
       logger.error("Server error:", error as Error);
       throw error; // Let the error propagate to stop the server
@@ -289,8 +351,11 @@ const config: ServerConfig = {
   credentialsDir: values['credentials-dir'] as string
 };
 
+const transportMode = (process.env.TRANSPORT_MODE || 'stdio').toLowerCase() === 'sse' ? 'sse' : 'stdio';
+const port = Number(process.env.PORT || '3103');
+
 // Start the server
-const server = new GoogleWorkspaceServer(config);
+const server = new GoogleWorkspaceServer(config, transportMode, port);
 server.start().catch(error => {
   logger.error("Fatal error:", error as Error);
   process.exit(1);
