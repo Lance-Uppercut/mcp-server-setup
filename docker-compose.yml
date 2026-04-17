@@ -71,13 +71,22 @@ services:
     build:
       context: ./servers/mcp-google-workspace
       dockerfile: Dockerfile
+    command:
+      - node
+      - dist/server.js
+      - --gauth-file
+      - /data/google-workspace/.gauth.json
+      - --accounts-file
+      - /data/google-workspace/.accounts.json
+      - --credentials-dir
+      - /data/google-workspace/credentials
     environment:
       - TRANSPORT_MODE=sse
       - PORT=3103
     ports:
       - "3103:3103"
     volumes:
-      - ./data/google-workspace:/app
+      - ./data/google-workspace:/data/google-workspace
     networks:
       - mcp-network
 
@@ -91,6 +100,7 @@ services:
     environment:
       - TRANSPORT_MODE=sse
       - PORT=3102
+      - TADO_TOKENS_FILE=/data/tokens.json
     ports:
       - "3102:3102"
     volumes:

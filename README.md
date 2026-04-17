@@ -155,6 +155,55 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
    docker compose up -d
    ```
 
+## Jenkins Deployment Secrets
+
+The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials and starts compose with `docker compose --env-file ./runtime-secrets/runtime.env ...`.
+
+`runtime-secrets/` is deleted in the pipeline `post` section and is gitignored.
+
+Create these Jenkins credentials before running the pipeline:
+
+- Secret text: `mcp-google-client-id`
+- Secret text: `mcp-google-client-secret`
+- Secret text: `mcp-jenkins-url`
+- Secret text: `mcp-jenkins-username`
+- Secret text: `mcp-jenkins-api-token`
+- Secret text: `mcp-todoist-api-token`
+- Secret text: `mcp-yahoo-email`
+- Secret text: `mcp-yahoo-app-password`
+- Secret text: `mcp-alertmanager-url`
+- Secret text: `mcp-router-password`
+- Secret text: `mcp-portainer-build1-token`
+- Secret text: `mcp-portainer-build2-token`
+- Secret text: `mcp-portainer-monitor-token`
+- Secret text: `mcp-portainer-observability1-token`
+- Secret text: `mcp-portainer-tools1-token`
+- Secret text: `mcp-portainer-production1-token`
+- Secret file: `mcp-google-gauth-json`
+- Secret file: `mcp-google-accounts-json`
+- Secret file: `mcp-google-oauth2-seed-json`
+- Secret file: `mcp-tado-tokens-json`
+
+`mcp-google-oauth2-seed-json` must contain a JSON object keyed by Google OAuth credential filename:
+
+```json
+{
+  ".oauth2.user@example.com.json": {
+    "access_token": "initial-access-token",
+    "refresh_token": "initial-refresh-token",
+    "expiry_date": 1767225600000
+  }
+}
+```
+
+### Persistent OAuth State
+
+- `data/google-workspace/.gauth.json` and `data/google-workspace/.accounts.json` are refreshed from Jenkins each deploy.
+- `data/google-workspace/credentials/.oauth2.*.json` is seeded only when missing.
+- `data/tado/tokens.json` is seeded only when missing.
+- Google and Tado can refresh and persist token files at runtime; redeploys preserve those refreshed files.
+- `ALERTMANAGER_USERNAME` and `ALERTMANAGER_PASSWORD` are optional and default to blank.
+
 ## MCP Client Configuration
 
 ### Open WebUI (Environment Variable)
