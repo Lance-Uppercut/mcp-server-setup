@@ -116,7 +116,7 @@ pipeline {
                         '''
 
                         def runtimeEnvContent = runtimeEnvSpecs.collect { spec ->
-                            "${spec.envName}=${quoteEnvValue(env[spec.variable])}"
+                            "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
                         }.join('\n') + '\n'
 
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
