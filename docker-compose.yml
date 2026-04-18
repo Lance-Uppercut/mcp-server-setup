@@ -128,6 +128,7 @@ services:
       - from todoist_mcp_server.todoist import mcp; mcp.settings.host='0.0.0.0'; mcp.settings.port=3104; mcp.run(transport='sse')
     environment:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
+      - FASTMCP_TRANSPORT_SECURITY__ENABLE_DNS_REBINDING_PROTECTION=false
     ports:
       - "3104:3104"
     networks:
@@ -157,6 +158,13 @@ services:
   playwright-mcp:
     image: mcr.microsoft.com/playwright/mcp:latest
     container_name: playwright-mcp
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "3106"
+      - --allowed-hosts
+      - "*"
     environment:
       - PLAYWRIGHT_MCP_HOST=0.0.0.0
       - PLAYWRIGHT_MCP_PORT=3106
