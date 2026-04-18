@@ -392,4 +392,5 @@ Available servers (use with `docker compose run --rm portainer-{server}`):
 - `portainer-tools1` - http://192.168.1.17:6500
 - `portainer-production1` - http://192.168.1.85:6500
 
-Set `PORTAINER_{SERVER}_TOKEN` in `.env` file.
+For local runs, set `PORTAINER_{SERVER}_TOKEN` in your local `.env` only (never commit live PATs).
+For Jenkins deploys, store these as Secret text credentials (`mcp-portainer-*-token`) and let the pipeline render `runtime-secrets/runtime.env`.
