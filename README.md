@@ -384,13 +384,24 @@ See [Microsoft Playwright MCP Server](https://github.com/microsoft/playwright-mc
 ### Portainer
 See [Portainer MCP Server](https://github.com/portainer/portainer-mcp) for documentation.
 
-Available servers (use with `docker compose run --rm portainer-{server}`):
-- `portainer-build1` - http://build1.home:6500
-- `portainer-build2` - http://build2.home:6500
-- `portainer-monitor` - http://192.168.1.60:6500
-- `portainer-observability1` - http://192.168.1.80:6500
-- `portainer-tools1` - http://192.168.1.17:6500
-- `portainer-production1` - http://192.168.1.85:6500
+Portainer MCP targets (`PORTAINER_SERVER` URLs in compose):
+
+| MCP Service | Target URL |
+|-------------|------------|
+| `portainer-build1` | `http://build1.home:6500` |
+| `portainer-build2` | `http://build2.home:6500` |
+| `portainer-monitor` | `http://192.168.1.60:6500` |
+| `portainer-observability1` | `http://192.168.1.80:6500` |
+| `portainer-tools1` | `http://192.168.1.17:6500` |
+| `portainer-production1` | `http://192.168.1.85:6500` |
+
+Run on demand (stdio transport):
+- `docker compose --profile portainer run --rm portainer-build1`
+- `docker compose --profile portainer run --rm portainer-build2`
+- `docker compose --profile portainer run --rm portainer-monitor`
+- `docker compose --profile portainer run --rm portainer-observability1`
+- `docker compose --profile portainer run --rm portainer-tools1`
+- `docker compose --profile portainer run --rm portainer-production1`
 
 For local runs, set `PORTAINER_{SERVER}_TOKEN` in your local `.env` only (never commit live PATs).
 For Jenkins deploys, store these as Secret text credentials (`mcp-portainer-*-token`) and let the pipeline render `runtime-secrets/runtime.env`.
