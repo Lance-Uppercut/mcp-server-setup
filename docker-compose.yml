@@ -141,7 +141,7 @@ services:
       context: ./servers/asus-router-mcp
       dockerfile: Dockerfile
     environment:
-      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.18}
       - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
       - ROUTER_PASSWORD=${ROUTER_PASSWORD}
       - USE_SSL=${USE_SSL:-true}
