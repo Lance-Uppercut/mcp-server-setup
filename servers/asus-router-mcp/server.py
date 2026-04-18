@@ -20,11 +20,17 @@ ROUTER_PASSWORD = os.environ.get("ROUTER_PASSWORD", "")
 USE_SSL = os.environ.get("USE_SSL", "true").lower() == "true"
 
 try:
-    from asusrouter import AsusRouter, AsusData, AsusWLAN, AsusGWLAN
+    from asusrouter import AsusRouter, AsusData
     ASUSROUTER_AVAILABLE = True
 except ImportError:
     ASUSROUTER_AVAILABLE = False
     print("Warning: asusrouter library not installed", file=__import__('sys').stderr)
+
+try:
+    from asusrouter.modules.wlan import AsusWLAN
+    ASUSROUTER_WLAN_CONTROL_AVAILABLE = True
+except ImportError:
+    ASUSROUTER_WLAN_CONTROL_AVAILABLE = False
 
 router_instance = None
 router_connected = False
@@ -166,43 +172,41 @@ async def call_tool(name: str, arguments: dict):
             data = await router.async_get_data(AsusData.GWLAN)
             result = data
         elif name == "set_guest_wifi":
+            if not ASUSROUTER_WLAN_CONTROL_AVAILABLE:
+                return {"isError": True, "content": [{"type": "text", "text": "WiFi state controls are unavailable with current asusrouter package"}]}
+
             enable = arguments.get("enable")
             band = arguments.get("band", "2.4GHz")
             guest_number = arguments.get("guest_number", 1)
             
-            api_id = f"{guest_number}.1" if band == "2.4GHz" else f"{guest_number}.2"
+            radio_index = "0" if band == "2.4GHz" else "1"
+            api_id = f"{radio_index}.{guest_number}"
             
-            state = AsusGWLAN.ON if enable else AsusGWLAN.OFF
+            state = AsusWLAN.ON if enable else AsusWLAN.OFF
             result = await router.async_set_state(
                 state,
                 arguments={"api_type": "gwlan", "api_id": api_id}
             )
             result = {"success": result, "message": f"Guest WiFi {'enabled' if enable else 'disabled'}"}
         elif name == "set_wifi_radio":
+            if not ASUSROUTER_WLAN_CONTROL_AVAILABLE:
+                return {"isError": True, "content": [{"type": "text", "text": "WiFi state controls are unavailable with current asusrouter package"}]}
+
             enable = arguments.get("enable")
             band = arguments.get("band", "2.4GHz")
             
-            if band == "2.4GHz":
-                state = AsusWLAN.ON if enable else AsusWLAN.OFF
-            else:
-                state = AsusWLAN.ON_5G if enable else AsusWLAN.OFF_5G
-            
-            result = await router.async_set_state(state)
-            result = {"success": result, "message": f"WiFi radio {band} {'enabled' if enable else 'disabled'}"}
-        elif name == "set_wifi_hidden":
-            hidden = arguments.get("hidden")
-            band = arguments.get("band", "2.4GHz")
-            ssid_number = arguments.get("ssid_number", 1)
-            
-            state = AsusWLAN.HIDDEN if hidden else AsusWLAN.VISIBLE
-            
-            api_id = f"{ssid_number - 1}" if band == "2.4GHz" else f"{ssid_number - 1}_5G"
+            state = AsusWLAN.ON if enable else AsusWLAN.OFF
             
             result = await router.async_set_state(
                 state,
-                arguments={"api_id": api_id}
+                arguments={"api_type": "wlan", "api_id": "0" if band == "2.4GHz" else "1"}
             )
-            result = {"success": result, "message": f"WiFi SSID {'hidden' if hidden else 'visible'} on {band}"}
+            result = {"success": result, "message": f"WiFi radio {band} {'enabled' if enable else 'disabled'}"}
+        elif name == "set_wifi_hidden":
+            return {
+                "isError": True,
+                "content": [{"type": "text", "text": "set_wifi_hidden is not supported by the current asusrouter package version"}]
+            }
         else:
             return {"isError": True, "content": [{"type": "text", "text": f"Unknown tool: {name}"}]}
         
