@@ -49,14 +49,11 @@ async def get_router():
     if not ASUSROUTER_AVAILABLE:
         raise RuntimeError("asusrouter library not available")
     
-    session = httpx.AsyncClient()
-    
     router_instance = AsusRouter(
         hostname=ROUTER_HOST,
         username=ROUTER_USERNAME,
         password=ROUTER_PASSWORD,
         use_ssl=USE_SSL,
-        session=session,
     )
     
     await router_instance.async_connect()
