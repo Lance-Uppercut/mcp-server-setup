@@ -8,6 +8,7 @@ import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.reactive.function.client.WebClient;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
+import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Value;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -43,6 +44,11 @@ public class TadoMcpApplication {
     @Bean
     public TadoService tadoService(WebClient webClient, @Value("${tado.tokens.file:/data/tokens.json}") String tokensFile) {
         return new TadoService(webClient, Path.of(tokensFile));
+    }
+
+    @Bean
+    public MethodToolCallbackProvider tadoToolCallbacks(TadoService tadoService) {
+        return MethodToolCallbackProvider.builder().toolObjects(tadoService).build();
     }
 }
 
