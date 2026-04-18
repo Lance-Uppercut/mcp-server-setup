@@ -60,6 +60,14 @@ services:
       - MCP_PORT=8001
     ports:
       - "8001:8001"
+    healthcheck:
+      test:
+        - CMD-SHELL
+        - python3 -c "import sys,urllib.request; r=urllib.request.urlopen('http://127.0.0.1:8001/sse', timeout=2); sys.exit(0 if r.status == 200 else 1)"
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
     extra_hosts:
       - "observability1:192.168.1.80"
     networks:
@@ -71,30 +79,39 @@ services:
     build:
       context: ./servers/mcp-google-workspace
       dockerfile: Dockerfile
+    command:
+      - node
+      - dist/server.js
+      - --gauth-file
+      - /data/google-workspace/.gauth.json
+      - --accounts-file
+      - /data/google-workspace/.accounts.json
+      - --credentials-dir
+      - /data/google-workspace/credentials
     environment:
       - TRANSPORT_MODE=sse
       - PORT=3103
     ports:
       - "3103:3103"
     volumes:
-      - ./data/google-workspace:/app
+      - ${MCP_DATA_DIR:-./data}/google-workspace:/data/google-workspace
     networks:
       - mcp-network
 
   # Tado MCP Server (SSE mode)
   tado-mcp:
-    image: registry:5000/offbeat-iot/tado-mcp-python:latest
+    image: registry:5000/offbeat-iot/tado-mcp:latest
     container_name: tado-mcp
     build:
-      context: ./servers/tado-mcp-python
+      context: ./servers/tado-mcp
       dockerfile: Dockerfile
     environment:
-      - TRANSPORT_MODE=sse
-      - PORT=3102
+      - SERVER_PORT=3102
+      - TADO_TOKENS_FILE=/data/tokens.json
     ports:
       - "3102:3102"
     volumes:
-      - ./data/tado:/data
+      - ${MCP_DATA_DIR:-./data}/tado:/data
     networks:
       - mcp-network
 
@@ -105,10 +122,12 @@ services:
     build:
       context: ./servers/todoist-mcp
       dockerfile: Dockerfile
+    command:
+      - python
+      - -c
+      - from todoist_mcp_server.todoist import mcp; from mcp.server.transport_security import TransportSecuritySettings; mcp.settings.host='0.0.0.0'; mcp.settings.port=3104; mcp.settings.transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False); mcp.run(transport='sse')
     environment:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
-      - MCP_HOST=0.0.0.0
-      - MCP_PORT=3104
     ports:
       - "3104:3104"
     networks:
@@ -138,13 +157,20 @@ services:
   playwright-mcp:
     image: mcr.microsoft.com/playwright/mcp:latest
     container_name: playwright-mcp
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "3106"
+      - --allowed-hosts
+      - "*"
     environment:
       - PLAYWRIGHT_MCP_HOST=0.0.0.0
       - PLAYWRIGHT_MCP_PORT=3106
     ports:
       - "3106:3106"
     volumes:
-      - ./data/playwright:/home/user
+      - ${MCP_DATA_DIR:-./data}/playwright:/home/user
     networks:
       - mcp-network
 
@@ -221,5 +247,5 @@ services:
 
 networks:
   mcp-network:
-    name: mcp-server-setup_mcp-network
-    driver: bridge
+    name: sentinel_sentinel-network
+    external: true

@@ -21,11 +21,10 @@ npm install
 npm run build
 ```
 
-### Python (Tado)
+### Java (Tado)
 ```bash
-cd servers/tado-mcp-python
-pip install -e .  # or pip install <dependencies>
-python -c "import server; print('OK')"
+cd servers/tado-mcp
+mvn clean package -DskipTests
 ```
 
 ### Docker
@@ -80,24 +79,18 @@ npx @anthropic-ai/mcp-inspector \
 - `move_emails` - Move to folder
 - `list_folders` - List all folders
 
-### Tado (Stdio Transport)
+### Tado (SSE Transport)
 
 ```bash
 # Build and run the container
 docker compose build tado-mcp
 docker compose up -d tado-mcp
 
-# Test directly with docker (stdio)
-docker exec tado-mcp python -c "from mcp.server import Server; print('Import OK')"
+# Verify SSE endpoint responds
+curl -s http://localhost:3102/sse -H "Accept: text/event-stream" --max-time 3
 
-# Verify MCP handshake with JSON-RPC:
-echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}' | docker exec -i tado-mcp python server.py
-
-# Expected response:
-# {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05","capabilities":{"experimental":{},"tools":{"listChanged":false}},"serverInfo":{"name":"tado-mcp","version":"1.26.0"}}}
-
-# Verify tools/list returns 7 tools:
-{ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'; echo '{"jsonrpc":"2.0","id":2,"method":"tools/list","params":{}}'; } | docker exec -i tado-mcp python server.py 2>&1 | grep -o '"name":"[^"]*"' | head -10
+# Verify protocol/tools list through inspector CLI
+npx @modelcontextprotocol/inspector --cli http://localhost:3102/sse --transport sse --method tools/list
 ```
 
 **Expected Tools:**
@@ -107,7 +100,6 @@ echo '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":
 - `reset_zone` - Reset to schedule
 - `get_home_info` - Home information
 - `get_weather` - Weather data
-- `refresh_tokens` - Refresh OAuth tokens
 
 ### Alertmanager (SSE Transport)
 
@@ -204,10 +196,8 @@ Each server must have a properly formatted configuration entry in `opencode/conf
 ```json
 {
   "mcpServers": {
-    "tado": {
-      "command": "docker",
-      "args": ["exec", "-i", "tado-mcp", "python", "server.py"]
-    }
+    "github": { "command": "docker", "args": ["compose", "-f", "/path/to/docker-compose.yml", "run", "--rm", "github-mcp"] },
+    "google-workspace": { "command": "docker", "args": ["compose", "-f", "/path/to/docker-compose.yml", "run", "--rm", "google-workspace-mcp"] }
   }
 }
 ```
@@ -285,8 +275,8 @@ docker compose exec opencode opencode --tools "yahoo-mail" --prompt "list_emails
 
 ### Tado
 - Requires OAuth tokens (stored in `/data/tokens.json` or env vars)
-- Uses stdio transport - cannot be accessed from outside container directly
-- Must use `docker compose exec` or run via OpenCode
+- Uses SSE transport at `http://localhost:3102/sse`
+- Automatically refreshes OAuth tokens and persists them to `/data/tokens.json`
 
 ### Alertmanager
 - Requires `ALERTMANAGER_URL` environment variable
@@ -341,7 +331,7 @@ docker compose exec <service-name> <test-command>
 curl -v http://localhost:3101/mcp/sse
 
 # For stdio servers, verify the command works
-docker compose exec <service-name> python server.py --help
+docker compose run --rm <service-name>
 ```
 
 ### Alertmanager TypeError

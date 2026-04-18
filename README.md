@@ -4,18 +4,19 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 
 ## Services
 
-| Service | MCP Server | Port | Transport | URL |
-|---------|------------|------|-----------|-----|
-| OpenCode CLI | MCP Client | - | Interactive | `docker compose exec opencode bash` |
-| Yahoo Mail | Custom Node.js MCP (local) | 3101 | SSE | http://localhost:3101/mcp/sse |
-| Alertmanager | ntk148v/alertmanager-mcp-server | 8001 | SSE | http://localhost:8001/sse |
-| Todoist | koki-develop/todoist-mcp-server | - | stdio | Claude Desktop only |
-| Google Workspace | j3k0/mcp-google-workspace | - | stdio | Claude Desktop only |
-| GitHub | github-mcp-server | - | stdio | Claude Desktop only |
-| Jenkins | mcpland/jenkins-mcp | - | stdio | Claude Desktop only |
-| Tado | Custom Python MCP (local) | - | stdio | Claude Desktop only |
-| Playwright | Microsoft Playwright MCP | 3106 | SSE | http://localhost:3106/sse |
-| Portainer (6 servers) | portainer/portainer-mcp | - | stdio | `docker compose run --rm portainer-{server}` |
+| Service               | MCP Server                      | Port | Transport   | URL                                          |
+|-----------------------|---------------------------------|------|-------------|----------------------------------------------|
+| OpenCode CLI          | MCP Client                      | -    | Interactive | `docker compose exec opencode bash`          |
+| Yahoo Mail            | Custom Node.js MCP (local)      | 3101 | SSE         | http://localhost:3101/mcp/sse                |
+| Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
+| Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
+| Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
+| Todoist               | koki-develop/todoist-mcp-server | 3104 | SSE         | http://localhost:3104/sse                    |
+| ASUS Router           | Custom Node.js MCP (local)      | 3105 | SSE         | http://localhost:3105/sse                    |
+| Playwright            | Microsoft Playwright MCP        | 3106 | SSE         | http://localhost:3106/sse                    |
+| GitHub                | github-mcp-server               | -    | stdio       | Claude Desktop only                          |
+| Jenkins               | mcpland/jenkins-mcp             | -    | stdio       | Claude Desktop only                          |
+| Portainer (6 servers) | portainer/portainer-mcp         | -    | stdio       | `docker compose run --rm portainer-{server}` |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
 
@@ -100,6 +101,22 @@ docker compose exec opencode opencode
 ```
 http://localhost:3101/mcp/sse   # Yahoo Mail
 http://localhost:8001/sse       # Alertmanager
+http://localhost:3102/sse       # Tado
+http://localhost:3103/sse       # Google Workspace
+http://localhost:3104/sse       # Todoist
+http://localhost:3105/sse       # ASUS Router
+http://localhost:3106/sse       # Playwright
+```
+
+### Deployed on build1
+```
+http://build1:3101/mcp/sse      # Yahoo Mail
+http://build1:8001/sse          # Alertmanager
+http://build1:3102/sse          # Tado
+http://build1:3103/sse          # Google Workspace
+http://build1:3104/sse          # Todoist
+http://build1:3105/sse          # ASUS Router
+http://build1:3106/sse          # Playwright
 ```
 
 ### Claude Desktop (stdio servers)
@@ -155,6 +172,55 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
    docker compose up -d
    ```
 
+## Jenkins Deployment Secrets
+
+The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials and starts compose with `docker compose --env-file ./runtime-secrets/runtime.env ...`.
+
+`runtime-secrets/` is deleted in the pipeline `post` section and is gitignored.
+
+Create these Jenkins credentials before running the pipeline:
+
+- Secret text: `mcp-google-client-id`
+- Secret text: `mcp-google-client-secret`
+- Secret text: `mcp-jenkins-url`
+- Secret text: `mcp-jenkins-username`
+- Secret text: `mcp-jenkins-api-token`
+- Secret text: `mcp-todoist-api-token`
+- Secret text: `mcp-yahoo-email`
+- Secret text: `mcp-yahoo-app-password`
+- Secret text: `mcp-alertmanager-url`
+- Secret text: `mcp-router-password`
+- Secret text: `mcp-portainer-build1-token`
+- Secret text: `mcp-portainer-build2-token`
+- Secret text: `mcp-portainer-monitor-token`
+- Secret text: `mcp-portainer-observability1-token`
+- Secret text: `mcp-portainer-tools1-token`
+- Secret text: `mcp-portainer-production1-token`
+- Secret file: `mcp-google-gauth-json`
+- Secret file: `mcp-google-accounts-json`
+- Secret file: `mcp-google-oauth2-seed-json`
+- Secret file: `mcp-tado-tokens-json`
+
+`mcp-google-oauth2-seed-json` must contain a JSON object keyed by Google OAuth credential filename:
+
+```json
+{
+  ".oauth2.user@example.com.json": {
+    "access_token": "initial-access-token",
+    "refresh_token": "initial-refresh-token",
+    "expiry_date": 1767225600000
+  }
+}
+```
+
+### Persistent OAuth State
+
+- `data/google-workspace/.gauth.json` and `data/google-workspace/.accounts.json` are refreshed from Jenkins each deploy.
+- `data/google-workspace/credentials/.oauth2.*.json` is seeded only when missing.
+- `data/tado/tokens.json` is seeded only when missing.
+- Google and Tado can refresh and persist token files at runtime; redeploys preserve those refreshed files.
+- `ALERTMANAGER_USERNAME` and `ALERTMANAGER_PASSWORD` are optional and default to blank.
+
 ## MCP Client Configuration
 
 ### Open WebUI (Environment Variable)
@@ -169,7 +235,12 @@ services:
       - MCP_ENABLE=true
       - TOOL_SERVER_CONNECTIONS=[
           {"url":"http://host.docker.internal:3101/mcp/sse","name":"yahoo-mail","type":"sse"},
-          {"url":"http://host.docker.internal:8001/sse","name":"alertmanager","type":"sse"}
+          {"url":"http://host.docker.internal:8001/sse","name":"alertmanager","type":"sse"},
+          {"url":"http://host.docker.internal:3102/sse","name":"tado","type":"sse"},
+          {"url":"http://host.docker.internal:3103/sse","name":"google-workspace","type":"sse"},
+          {"url":"http://host.docker.internal:3104/sse","name":"todoist","type":"sse"},
+          {"url":"http://host.docker.internal:3105/sse","name":"asus-router","type":"sse"},
+          {"url":"http://host.docker.internal:3106/sse","name":"playwright","type":"sse"}
         ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
@@ -223,23 +294,50 @@ curl http://localhost:3101/mcp/sse
 # Alertmanager (SSE)
 curl http://localhost:8001/sse
 
-# Other servers (stdio)
-docker compose run --rm todoist-mcp
-docker compose run --rm google-workspace-mcp
+# Tado (SSE)
+curl http://localhost:3102/sse
+
+# Google Workspace (SSE)
+curl http://localhost:3103/sse
+
+# Todoist (SSE)
+curl http://localhost:3104/sse
+
+# ASUS Router (SSE)
+curl http://localhost:3105/sse
+
+# Playwright (SSE)
+curl http://localhost:3106/sse
+
+# Stdio servers
 docker compose run --rm github-mcp
 docker compose run --rm jenkins-mcp
-docker compose run --rm tado-mcp
 ```
+
+### Verify All MCP Servers
+
+Use the repository verification script to validate endpoints and `tools/list` in one run:
+
+```bash
+# local deployment on the current host
+./scripts/verify-mcp-servers.sh --host localhost
+
+# verify deployed stack on build1 from another machine
+./scripts/verify-mcp-servers.sh --host build1 --skip-containers
+```
+
+The Jenkins pipeline runs this verification automatically in stage `Verify MCP servers` after deploy.
 
 ### Docker Compose Network
 
 For Open WebUI to access MCP servers, ensure they're on the same network:
 
 ```bash
-# All MCP servers are on mcp-network
-# Add open-webui to it:
+# All MCP servers are attached to the shared sentinel network
+# Add open-webui to the same network:
 networks:
   mcp-network:
+    name: sentinel_sentinel-network
     external: true
 ```
 
