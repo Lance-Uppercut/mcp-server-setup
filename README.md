@@ -314,6 +314,20 @@ docker compose run --rm github-mcp
 docker compose run --rm jenkins-mcp
 ```
 
+### Verify All MCP Servers
+
+Use the repository verification script to validate endpoints and `tools/list` in one run:
+
+```bash
+# local deployment on the current host
+./scripts/verify-mcp-servers.sh --host localhost
+
+# verify deployed stack on build1 from another machine
+./scripts/verify-mcp-servers.sh --host build1 --skip-containers
+```
+
+The Jenkins pipeline runs this verification automatically in stage `Verify MCP servers` after deploy.
+
 ### Docker Compose Network
 
 For Open WebUI to access MCP servers, ensure they're on the same network:
