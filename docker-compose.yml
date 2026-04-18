@@ -118,11 +118,9 @@ services:
     command:
       - python
       - -c
-      - from todoist_mcp_server.todoist import mcp; mcp.run(transport='sse')
+      - from todoist_mcp_server.todoist import mcp; mcp.settings.host='0.0.0.0'; mcp.settings.port=3104; mcp.run(transport='sse')
     environment:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
-      - FASTMCP_HOST=0.0.0.0
-      - FASTMCP_PORT=3104
     ports:
       - "3104:3104"
     networks:
