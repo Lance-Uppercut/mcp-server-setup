@@ -113,11 +113,6 @@ pipeline {
                             chmod 700 ./runtime-secrets
                         '''
 
-                        sh """
-                            mkdir -p '${mcpDataDir}/google-workspace/credentials' '${mcpDataDir}/tado' '${mcpDataDir}/playwright'
-                            chmod 700 '${mcpDataDir}' '${mcpDataDir}/google-workspace' '${mcpDataDir}/tado' '${mcpDataDir}/playwright'
-                        """
-
                         def runtimeEnvContent = runtimeEnvSpecs.collect { spec ->
                             "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
                         }
@@ -127,13 +122,7 @@ pipeline {
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
                         sh 'chmod 600 ./runtime-secrets/runtime.env'
 
-                        sh """
-                            install -m 600 "\$SECRET_GOOGLE_GAUTH_FILE" '${mcpDataDir}/google-workspace/.gauth.json'
-                            install -m 600 "\$SECRET_GOOGLE_ACCOUNTS_FILE" '${mcpDataDir}/google-workspace/.accounts.json'
-                        """
-
-                        withEnv(["MCP_DATA_DIR=${mcpDataDir}"]) {
-                            sh '''
+                        sh '''
                             python3 - <<'PY'
 import json
 import os
@@ -155,7 +144,7 @@ except Exception as exc:
 if not isinstance(parsed, dict):
     raise SystemExit("Credential mcp-google-oauth2-seed-json must be a JSON object keyed by .oauth2.*.json filenames.")
 
-base = Path(os.environ["MCP_DATA_DIR"]) / "google-workspace" / "credentials"
+base = Path("./runtime-secrets/google-oauth2-seed")
 base.mkdir(parents=True, exist_ok=True)
 
 for filename, payload in parsed.items():
@@ -168,18 +157,9 @@ for filename, payload in parsed.items():
     if not rendered.endswith("\\n"):
         rendered += "\\n"
     target.write_text(rendered)
-    os.chmod(target, 0o600)
-    print(f"Seeded Google OAuth credentials at {target}")
+    print(f"Prepared Google OAuth seed file at {target}")
 PY
-                            '''
-                        }
-
-                        if (!fileExists("${mcpDataDir}/tado/tokens.json")) {
-                            sh """
-                                install -m 600 "\$SECRET_TADO_TOKENS_FILE" '${mcpDataDir}/tado/tokens.json'
-                            """
-                            echo "Seeded Tado tokens at ${mcpDataDir}/tado/tokens.json"
-                        }
+                        '''
 
                         def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
 
@@ -189,6 +169,40 @@ PY
                             sh "${composeCommand} pull"
                             sh "${composeCommand} up -d"
                         }
+
+                        sh """
+                            googleContainer=\$(${composeCommand} ps -q google-workspace-mcp)
+                            tadoContainer=\$(${composeCommand} ps -q tado-mcp)
+
+                            if [ -z "\$googleContainer" ]; then
+                                echo "google-workspace-mcp container not found"
+                                exit 1
+                            fi
+                            if [ -z "\$tadoContainer" ]; then
+                                echo "tado-mcp container not found"
+                                exit 1
+                            fi
+
+                            docker cp "\$SECRET_GOOGLE_GAUTH_FILE" "\$googleContainer:/data/google-workspace/.gauth.json"
+                            docker cp "\$SECRET_GOOGLE_ACCOUNTS_FILE" "\$googleContainer:/data/google-workspace/.accounts.json"
+                            docker exec "\$googleContainer" sh -lc 'mkdir -p /data/google-workspace/credentials && chmod 600 /data/google-workspace/.gauth.json /data/google-workspace/.accounts.json'
+
+                            if [ -d ./runtime-secrets/google-oauth2-seed ]; then
+                                for seedFile in ./runtime-secrets/google-oauth2-seed/.oauth2.*.json; do
+                                    [ -f "\$seedFile" ] || continue
+                                    seedName=\$(basename "\$seedFile")
+                                    if ! docker exec "\$googleContainer" test -f "/data/google-workspace/credentials/\$seedName"; then
+                                        docker cp "\$seedFile" "\$googleContainer:/data/google-workspace/credentials/\$seedName"
+                                        docker exec "\$googleContainer" chmod 600 "/data/google-workspace/credentials/\$seedName"
+                                    fi
+                                done
+                            fi
+
+                            docker cp "\$SECRET_TADO_TOKENS_FILE" "\$tadoContainer:/data/tokens.json"
+                            docker exec "\$tadoContainer" chmod 600 /data/tokens.json
+
+                            ${composeCommand} restart google-workspace-mcp tado-mcp
+                        """
 
                         sh "${composeCommand} ps"
 
