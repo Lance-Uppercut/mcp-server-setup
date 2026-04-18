@@ -223,7 +223,6 @@ class GoogleWorkspaceServer {
                 });
                 try {
                     await this.server.connect(transport);
-                    await transport.start();
                 }
                 catch (error) {
                     logger.error("SSE connection error:", error);
