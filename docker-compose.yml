@@ -240,5 +240,5 @@ services:
 
 networks:
   mcp-network:
-    name: mcp-server-setup_mcp-network
-    driver: bridge
+    name: sentinel_sentinel-network
+    external: true

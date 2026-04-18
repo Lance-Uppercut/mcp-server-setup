@@ -319,10 +319,11 @@ docker compose run --rm jenkins-mcp
 For Open WebUI to access MCP servers, ensure they're on the same network:
 
 ```bash
-# All MCP servers are on mcp-network
-# Add open-webui to it:
+# All MCP servers are attached to the shared sentinel network
+# Add open-webui to the same network:
 networks:
   mcp-network:
+    name: sentinel_sentinel-network
     external: true
 ```
 
