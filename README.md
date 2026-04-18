@@ -4,19 +4,19 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 
 ## Services
 
-| Service | MCP Server | Port | Transport | URL |
-|---------|------------|------|-----------|-----|
-| OpenCode CLI | MCP Client | - | Interactive | `docker compose exec opencode bash` |
-| Yahoo Mail | Custom Node.js MCP (local) | 3101 | SSE | http://localhost:3101/mcp/sse |
-| Alertmanager | ntk148v/alertmanager-mcp-server | 8001 | SSE | http://localhost:8001/sse |
-| Tado | Custom Python MCP (local) | 3102 | SSE | http://localhost:3102/sse |
-| Google Workspace | Custom Node.js MCP (local) | 3103 | SSE | http://localhost:3103/sse |
-| Todoist | koki-develop/todoist-mcp-server | 3104 | SSE | http://localhost:3104/sse |
-| ASUS Router | Custom Node.js MCP (local) | 3105 | SSE | http://localhost:3105/sse |
-| Playwright | Microsoft Playwright MCP | 3106 | SSE | http://localhost:3106/sse |
-| GitHub | github-mcp-server | - | stdio | Claude Desktop only |
-| Jenkins | mcpland/jenkins-mcp | - | stdio | Claude Desktop only |
-| Portainer (6 servers) | portainer/portainer-mcp | - | stdio | `docker compose run --rm portainer-{server}` |
+| Service               | MCP Server                      | Port | Transport   | URL                                          |
+|-----------------------|---------------------------------|------|-------------|----------------------------------------------|
+| OpenCode CLI          | MCP Client                      | -    | Interactive | `docker compose exec opencode bash`          |
+| Yahoo Mail            | Custom Node.js MCP (local)      | 3101 | SSE         | http://localhost:3101/mcp/sse                |
+| Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
+| Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
+| Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
+| Todoist               | koki-develop/todoist-mcp-server | 3104 | SSE         | http://localhost:3104/sse                    |
+| ASUS Router           | Custom Node.js MCP (local)      | 3105 | SSE         | http://localhost:3105/sse                    |
+| Playwright            | Microsoft Playwright MCP        | 3106 | SSE         | http://localhost:3106/sse                    |
+| GitHub                | github-mcp-server               | -    | stdio       | Claude Desktop only                          |
+| Jenkins               | mcpland/jenkins-mcp             | -    | stdio       | Claude Desktop only                          |
+| Portainer (6 servers) | portainer/portainer-mcp         | -    | stdio       | `docker compose run --rm portainer-{server}` |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
 

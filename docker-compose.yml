@@ -100,14 +100,13 @@ services:
 
   # Tado MCP Server (SSE mode)
   tado-mcp:
-    image: registry:5000/offbeat-iot/tado-mcp-python:latest
+    image: registry:5000/offbeat-iot/tado-mcp:latest
     container_name: tado-mcp
     build:
-      context: ./servers/tado-mcp-python
+      context: ./servers/tado-mcp
       dockerfile: Dockerfile
     environment:
-      - TRANSPORT_MODE=sse
-      - PORT=3102
+      - SERVER_PORT=3102
       - TADO_TOKENS_FILE=/data/tokens.json
     ports:
       - "3102:3102"
