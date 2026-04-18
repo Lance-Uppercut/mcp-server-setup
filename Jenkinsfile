@@ -71,6 +71,7 @@ pipeline {
             steps {
                 script {
                     echo "Deploying MCP servers..."
+                    def mcpDataDir = '/home/jenkins/mcp-server-setup-data'
 
                     def runtimeEnvSpecs = [
                         [envName: 'ANTHROPIC_API_KEY', credentialId: 'mcp-anthropic-api-key', variable: 'SECRET_ANTHROPIC_API_KEY'],
@@ -108,23 +109,31 @@ pipeline {
 
                     withCredentials(credentialBindings) {
                         sh '''
-                            mkdir -p ./runtime-secrets ./data/google-workspace/credentials ./data/tado ./data/playwright
+                            mkdir -p ./runtime-secrets
                             chmod 700 ./runtime-secrets
                         '''
 
+                        sh """
+                            mkdir -p '${mcpDataDir}/google-workspace/credentials' '${mcpDataDir}/tado' '${mcpDataDir}/playwright'
+                            chmod 700 '${mcpDataDir}' '${mcpDataDir}/google-workspace' '${mcpDataDir}/tado' '${mcpDataDir}/playwright'
+                        """
+
                         def runtimeEnvContent = runtimeEnvSpecs.collect { spec ->
                             "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
-                        }.join('\n') + '\n'
+                        }
+                        runtimeEnvContent += "MCP_DATA_DIR=${quoteEnvValue(mcpDataDir)}"
+                        runtimeEnvContent = runtimeEnvContent.join('\n') + '\n'
 
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
                         sh 'chmod 600 ./runtime-secrets/runtime.env'
 
-                        sh '''
-                            install -m 600 "$SECRET_GOOGLE_GAUTH_FILE" "./data/google-workspace/.gauth.json"
-                            install -m 600 "$SECRET_GOOGLE_ACCOUNTS_FILE" "./data/google-workspace/.accounts.json"
-                        '''
+                        sh """
+                            install -m 600 "\$SECRET_GOOGLE_GAUTH_FILE" '${mcpDataDir}/google-workspace/.gauth.json'
+                            install -m 600 "\$SECRET_GOOGLE_ACCOUNTS_FILE" '${mcpDataDir}/google-workspace/.accounts.json'
+                        """
 
-                        sh '''
+                        withEnv(["MCP_DATA_DIR=${mcpDataDir}"]) {
+                            sh '''
                             python3 - <<'PY'
 import json
 import os
@@ -146,7 +155,7 @@ except Exception as exc:
 if not isinstance(parsed, dict):
     raise SystemExit("Credential mcp-google-oauth2-seed-json must be a JSON object keyed by .oauth2.*.json filenames.")
 
-base = Path("./data/google-workspace/credentials")
+base = Path(os.environ["MCP_DATA_DIR"]) / "google-workspace" / "credentials"
 base.mkdir(parents=True, exist_ok=True)
 
 for filename, payload in parsed.items():
@@ -162,11 +171,14 @@ for filename, payload in parsed.items():
     os.chmod(target, 0o600)
     print(f"Seeded Google OAuth credentials at {target}")
 PY
-                        '''
+                            '''
+                        }
 
-                        if (!fileExists('./data/tado/tokens.json')) {
-                            sh "install -m 600 '${env.SECRET_TADO_TOKENS_FILE}' './data/tado/tokens.json'"
-                            echo 'Seeded Tado tokens at ./data/tado/tokens.json'
+                        if (!fileExists("${mcpDataDir}/tado/tokens.json")) {
+                            sh """
+                                install -m 600 "\$SECRET_TADO_TOKENS_FILE" '${mcpDataDir}/tado/tokens.json'
+                            """
+                            echo "Seeded Tado tokens at ${mcpDataDir}/tado/tokens.json"
                         }
 
                         def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
