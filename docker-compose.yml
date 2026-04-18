@@ -125,10 +125,9 @@ services:
     command:
       - python
       - -c
-      - from todoist_mcp_server.todoist import mcp; mcp.settings.host='0.0.0.0'; mcp.settings.port=3104; mcp.run(transport='sse')
+      - from todoist_mcp_server.todoist import mcp; from mcp.server.transport_security import TransportSecuritySettings; mcp.settings.host='0.0.0.0'; mcp.settings.port=3104; mcp.settings.transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False); mcp.run(transport='sse')
     environment:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
-      - FASTMCP_TRANSPORT_SECURITY__ENABLE_DNS_REBINDING_PROTECTION=false
     ports:
       - "3104:3104"
     networks:
