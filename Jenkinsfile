@@ -117,6 +117,7 @@ pipeline {
                             "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
                         }
                         runtimeEnvContent += "MCP_DATA_DIR=${quoteEnvValue(mcpDataDir)}"
+                        runtimeEnvContent += "COMPOSE_PROJECT_NAME=${quoteEnvValue('mcp-servers')}"
                         runtimeEnvContent = runtimeEnvContent.join('\n') + '\n'
 
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
