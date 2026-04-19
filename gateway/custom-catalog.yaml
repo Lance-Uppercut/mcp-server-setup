@@ -1,0 +1,94 @@
+registry:
+  yahoo-mail:
+    title: Yahoo Mail
+    description: Yahoo Mail MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://yahoo-mail-mcp:3101/sse
+      transport_type: sse
+
+  alertmanager:
+    title: Alertmanager
+    description: Alertmanager MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://alertmanager-mcp:8001/sse
+      transport_type: sse
+
+  tado:
+    title: Tado
+    description: Tado MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://tado-mcp:3102/sse
+      transport_type: sse
+
+  google-workspace:
+    title: Google Workspace
+    description: Google Workspace MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://google-workspace-mcp:3103/sse
+      transport_type: sse
+
+  todoist:
+    title: Todoist
+    description: Todoist MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://todoist-mcp:3104/sse
+      transport_type: sse
+
+  asus-router:
+    title: ASUS Router
+    description: ASUS Router MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://asus-router-mcp:3105/sse
+      transport_type: sse
+
+  jenkins:
+    title: Jenkins
+    description: Jenkins MCP server (remote)
+    type: remote
+    remote:
+      url: http://monitor:8085/mcp-server/mcp
+      transport_type: http
+      headers:
+        Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
+
+  portainer_build1:
+    title: Portainer Build1
+    description: Portainer MCP server
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
+  portainer_build2:
+    title: Portainer Build2
+    description: Portainer MCP server
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
+  portainer_monitor:
+    title: Portainer Monitor
+    description: Portainer MCP server
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
+  portainer_observability1:
+    title: Portainer Observability1
+    description: Portainer MCP server
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
+  portainer_tools1:
+    title: Portainer Tools1
+    description: Portainer MCP server
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
+  portainer_production1:
+    title: Portainer Production1
+    description: Portainer MCP server
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
