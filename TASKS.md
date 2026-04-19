@@ -85,7 +85,7 @@
   - [ ] Playwright sessions/storage still work if expected
 
 ## Phase 6. Rework Secret Wiring
-- [ ] Map Jenkins-rendered runtime secrets to gateway/backend configuration
+- [x] Map Jenkins-rendered runtime secrets to gateway/backend configuration
   Verification:
   - [ ] Gateway starts without missing required secret errors
 - [ ] Map credentials for GitHub, Yahoo, Google, Todoist, Router, Alertmanager, Portainer, and Jenkins
