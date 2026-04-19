@@ -1,62 +1,106 @@
-mcpServers:
+registry:
   yahoo-mail:
-    type: server
-    image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
+    title: Yahoo Mail
+    description: Yahoo Mail MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://yahoo-mail-mcp:3101/sse
+      transport_type: sse
+
   alertmanager:
-    type: server
-    image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
+    title: Alertmanager
+    description: Alertmanager MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://alertmanager-mcp:8001/sse
+      transport_type: sse
+
   tado:
-    type: server
-    image: registry:5000/offbeat-iot/tado-mcp:latest
+    title: Tado
+    description: Tado MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://tado-mcp:3102/sse
+      transport_type: sse
+
   google-workspace:
-    type: server
-    image: registry:5000/offbeat-iot/google-workspace-mcp:latest
+    title: Google Workspace
+    description: Google Workspace MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://google-workspace-mcp:3103/sse
+      transport_type: sse
+
   todoist:
-    type: server
-    image: koki-develop/todoist-mcp-server:latest
+    title: Todoist
+    description: Todoist MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://todoist-mcp:3104/sse
+      transport_type: sse
+
   asus-router:
-    type: server
-    image: registry:5000/offbeat-iot/asus-router-mcp:latest
+    title: ASUS Router
+    description: ASUS Router MCP server (legacy remote)
+    type: remote
+    remote:
+      url: http://asus-router-mcp:3105/sse
+      transport_type: sse
+
   playwright:
+    title: Playwright
+    description: Playwright MCP server
     type: server
     image: mcr.microsoft.com/playwright/mcp:latest
+
   github:
+    title: GitHub
+    description: GitHub MCP server
     type: server
     image: ghcr.io/github/github-mcp-server:latest
+
   jenkins:
+    title: Jenkins
+    description: Jenkins MCP server (remote)
     type: remote
     remote:
       url: http://monitor:8085/mcp-server/mcp
-      transport_type: streamable-http
+      transport_type: http
       headers:
         Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
+
   portainer_build1:
+    title: Portainer Build1
+    description: Portainer MCP server for build1
     type: server
-    image: ghcr.io/portainer/portainer-mcp:latest
-    config:
-      server: http://build1.home:6500
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
   portainer_build2:
+    title: Portainer Build2
+    description: Portainer MCP server for build2
     type: server
-    image: ghcr.io/portainer/portainer-mcp:latest
-    config:
-      server: http://build2.home:6500
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
   portainer_monitor:
+    title: Portainer Monitor
+    description: Portainer MCP server for monitor
     type: server
-    image: ghcr.io/portainer/portainer-mcp:latest
-    config:
-      server: http://192.168.1.60:6500
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
   portainer_observability1:
+    title: Portainer Observability1
+    description: Portainer MCP server for observability1
     type: server
-    image: ghcr.io/portainer/portainer-mcp:latest
-    config:
-      server: http://192.168.1.80:6500
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
   portainer_tools1:
+    title: Portainer Tools1
+    description: Portainer MCP server for tools1
     type: server
-    image: ghcr.io/portainer/portainer-mcp:latest
-    config:
-      server: http://192.168.1.17:6500
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+
   portainer_production1:
+    title: Portainer Production1
+    description: Portainer MCP server for production1
     type: server
-    image: ghcr.io/portainer/portainer-mcp:latest
-    config:
-      server: http://192.168.1.85:6500
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
