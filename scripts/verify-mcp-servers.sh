@@ -111,7 +111,7 @@ echo "=== MCP Gateway verify start host=$HOST ==="
 if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
   if [[ "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
     if command -v docker >/dev/null 2>&1; then
-      check_container "mcp-gateway" '^mcp-gateway|'
+      check_container "mcp-gateway" '^mcp-gateway\|'
     else
       warn "docker not available; skipping container checks"
     fi

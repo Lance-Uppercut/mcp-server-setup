@@ -50,26 +50,26 @@
 
 ## Phase 4. Migrate Server Definitions Behind Gateway
 - [ ] Configure custom/local servers in gateway:
-  - [ ] `yahoo-mail`
-  - [ ] `google-workspace`
-  - [ ] `tado`
-  - [ ] `asus-router`
+  - [x] `yahoo-mail`
+  - [x] `google-workspace`
+  - [x] `tado`
+  - [x] `asus-router`
   Verification:
   - [ ] Each backend contributes tools through gateway `tools/list`
 - [ ] Configure upstream-backed servers in gateway:
-  - [ ] `github`
-  - [ ] `playwright`
-  - [ ] `alertmanager`
-  - [ ] `todoist` or record fallback decision
-  - [ ] `portainer_build1`
-  - [ ] `portainer_build2`
-  - [ ] `portainer_monitor`
-  - [ ] `portainer_observability1`
-  - [ ] `portainer_tools1`
-  - [ ] `portainer_production1`
+  - [x] `github`
+  - [x] `playwright`
+  - [x] `alertmanager`
+  - [x] `todoist` or record fallback decision
+  - [x] `portainer_build1`
+  - [x] `portainer_build2`
+  - [x] `portainer_monitor`
+  - [x] `portainer_observability1`
+  - [x] `portainer_tools1`
+  - [x] `portainer_production1`
   Verification:
   - [ ] Each backend contributes tools through gateway `tools/list`
-- [ ] Configure `jenkins` as remote
+- [x] Configure `jenkins` as remote
   Verification:
   - [ ] Jenkins-backed tools appear through gateway `tools/list`
 
@@ -134,9 +134,9 @@
 - [x] Rewrite `README.md` for gateway-first usage
   Verification:
   - [x] README documents only the gateway-based architecture
-- [ ] Update `TESTING.md` to use gateway plus MCP Inspector
+- [x] Update `TESTING.md` to use gateway plus MCP Inspector
   Verification:
-  - [ ] Testing steps no longer rely on direct server ports
+  - [x] Testing steps no longer rely on direct server ports
 - [x] Document the single supported SSE endpoint
   Verification:
   - [x] One canonical client connection example exists
