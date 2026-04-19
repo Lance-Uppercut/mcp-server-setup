@@ -174,6 +174,10 @@ PY
                         sh """
                             mcpGatewayContainer=\$(${composeCommand} ps -q mcp-gateway)
                             echo "MCP Gateway container: \$mcpGatewayContainer"
+                            if [ -n "\$mcpGatewayContainer" ]; then
+                                echo "MCP Gateway logs:"
+                                docker logs \$mcpGatewayContainer || true
+                            fi
                             googleContainer=\$(${composeCommand} ps -q google-workspace-mcp)
                             tadoContainer=\$(${composeCommand} ps -q tado-mcp)
 
