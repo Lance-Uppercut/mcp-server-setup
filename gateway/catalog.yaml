@@ -2,5 +2,7 @@ mcpServers:
   jenkins:
     type: remote
     remote:
-      url: http://jenkins:3100/sse
-      transport_type: sse
+      url: http://monitor:8085/mcp-server/mcp
+      transport_type: streamable-http
+      headers:
+        Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
