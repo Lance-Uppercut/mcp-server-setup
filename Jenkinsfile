@@ -174,6 +174,7 @@ PY
                             mcpGatewayContainer=\$(${composeCommand} ps -q mcp-gateway)
                             echo "MCP Gateway container: \$mcpGatewayContainer"
                             if [ -n "\$mcpGatewayContainer" ]; then
+                                sleep 10
                                 echo "MCP Gateway startup logs (tail 120):"
                                 docker logs "\$mcpGatewayContainer" --tail 120 || true
                             fi
