@@ -97,6 +97,20 @@ check_tools() {
     tool_names="$(echo "$output" | grep -oE '"name"[[:space:]]*:[[:space:]]*"[^"]+"' | sed -E 's/.*"([^"]+)"$/\1/' | sort -u)"
     tool_count="$(echo "$tool_names" | sed '/^$/d' | wc -l | tr -d ' ')"
     pass "tools:$name discovered ${tool_count} tools"
+
+    local missing=()
+    echo "$tool_names" | grep -qE '^browser_' || missing+=("playwright")
+    echo "$tool_names" | grep -qE '^(add_issue_comment|create_|get_|list_|merge_pull_request|push_files|search_|update_issue|update_pull_request_branch)$' || missing+=("github")
+    echo "$tool_names" | grep -qiE 'jenkins|job|build' || missing+=("jenkins")
+    echo "$tool_names" | grep -qi 'portainer' || missing+=("portainer")
+    echo "$tool_names" | grep -qiE 'yahoo|google|gmail|calendar|todoist|tado|router|alert' || missing+=("custom")
+
+    if [[ ${#missing[@]} -gt 0 ]]; then
+      warn "tools:$name missing backend families: $(IFS=,; echo "${missing[*]}")"
+    else
+      pass "tools:$name backend families detected: playwright,github,jenkins,portainer,custom"
+    fi
+
     if [[ $rc -ne 0 ]]; then
       warn "tools:$name inspector exited non-zero ($rc) after successful output"
     fi
