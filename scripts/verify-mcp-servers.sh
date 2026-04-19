@@ -96,6 +96,11 @@ check_tools() {
     local tool_names tool_count
     tool_names="$(echo "$output" | grep -oE '"name"[[:space:]]*:[[:space:]]*"[^"]+"' | sed -E 's/.*"([^"]+)"$/\1/' | sort -u)"
     tool_count="$(echo "$tool_names" | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [[ "$tool_count" -eq 0 ]]; then
+      fail "tools:$name discovered 0 tools"
+      return
+    fi
+
     pass "tools:$name discovered ${tool_count} tools"
 
     local missing=()
