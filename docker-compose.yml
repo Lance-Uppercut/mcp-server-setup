@@ -10,7 +10,7 @@ services:
     ports:
       - "3100:3100"
     volumes:
-      - ./gateway:/gateway:ro
+      - ./gateway:/gateway
       - /var/run/docker.sock:/var/run/docker.sock
     extra_hosts:
       - "host.docker.internal:host-gateway"
