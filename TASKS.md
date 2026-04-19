@@ -123,9 +123,9 @@
 - [x] Remove obsolete wrapper image builds from `Jenkinsfile`
   Verification:
   - [x] Build stage no longer builds deprecated wrapper images
-- [ ] Remove `servers/portainer-mcp/` if no longer needed
+- [x] Remove `servers/portainer-mcp/` if no longer needed
   Verification:
-  - [ ] No compose, build, or docs references remain
+  - [x] No compose, build, or docs references remain
 - [x] Remove `servers/todoist-mcp/` from Jenkins build (upstream image used in gateway)
   Verification:
   - [x] Jenkins no longer builds todoist-mcp

@@ -93,8 +93,9 @@ check_tools() {
   fi
 
   if echo "$output" | grep -q '"tools"'; then
-    local tool_count
-    tool_count="$(echo "$output" | grep -o '"name"' | wc -l | tr -d ' ')"
+    local tool_names tool_count
+    tool_names="$(echo "$output" | grep -oE '"name"[[:space:]]*:[[:space:]]*"[^"]+"' | sed -E 's/.*"([^"]+)"$/\1/' | sort -u)"
+    tool_count="$(echo "$tool_names" | sed '/^$/d' | wc -l | tr -d ' ')"
     pass "tools:$name discovered ${tool_count} tools"
     if [[ $rc -ne 0 ]]; then
       warn "tools:$name inspector exited non-zero ($rc) after successful output"
