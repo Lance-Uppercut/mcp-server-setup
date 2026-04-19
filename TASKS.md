@@ -142,12 +142,12 @@
   - [x] One canonical client connection example exists
 
 ## Phase 12. Final Validation
-- [ ] Start the migrated stack
+- [x] Start the migrated stack
   Verification:
-  - [ ] Gateway is healthy
-- [ ] Run gateway verification script
+  - [x] Gateway is healthy
+- [x] Run gateway verification script
   Verification:
-  - [ ] Script passes
+  - [x] Script passes
 - [ ] Confirm expected backends appear in gateway `tools/list`
   Verification:
   - [ ] All intended servers are represented
