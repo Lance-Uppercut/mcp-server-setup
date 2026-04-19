@@ -168,9 +168,12 @@ PY
                         timeout(time: 5, unit: 'MINUTES') {
                             sh "${composeCommand} pull"
                             sh "${composeCommand} up -d"
+                            sh "${composeCommand} up -d mcp-gateway"
                         }
 
                         sh """
+                            mcpGatewayContainer=\$(${composeCommand} ps -q mcp-gateway)
+                            echo "MCP Gateway container: \$mcpGatewayContainer"
                             googleContainer=\$(${composeCommand} ps -q google-workspace-mcp)
                             tadoContainer=\$(${composeCommand} ps -q tado-mcp)
 
