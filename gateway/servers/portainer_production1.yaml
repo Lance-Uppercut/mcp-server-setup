@@ -1,0 +1,12 @@
+name: portainer_production1
+type: server
+title: Portainer Production1
+image: ghcr.io/portainer/portainer-mcp:latest
+description: Portainer MCP server for production1
+config:
+  - name: server
+    type: string
+    default: http://192.168.1.85:6500
+secrets:
+  - name: token
+    description: Portainer API token

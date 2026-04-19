@@ -1,0 +1,5 @@
+name: google-workspace
+type: server
+title: Google Workspace
+image: registry:5000/offbeat-iot/google-workspace-mcp:latest
+description: Google Workspace MCP server for Gmail and Calendar

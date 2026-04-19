@@ -1,0 +1,5 @@
+name: asus-router
+type: server
+title: ASUS Router
+image: registry:5000/offbeat-iot/asus-router-mcp:latest
+description: ASUS Router MCP server

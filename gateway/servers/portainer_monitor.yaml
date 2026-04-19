@@ -1,0 +1,12 @@
+name: portainer_monitor
+type: server
+title: Portainer Monitor
+image: ghcr.io/portainer/portainer-mcp:latest
+description: Portainer MCP server for monitor
+config:
+  - name: server
+    type: string
+    default: http://192.168.1.60:6500
+secrets:
+  - name: token
+    description: Portainer API token

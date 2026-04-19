@@ -1,32 +1,9 @@
 {
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
-    "alertmanager": {
+    "gateway": {
       "type": "remote",
-      "url": "http://alertmanager-mcp:8001/sse",
-      "enabled": true
-    },
-    "github": {
-      "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "-e", "GITHUB_PERSONAL_ACCESS_TOKEN", "ghcr.io/github/github-mcp-server"],
-      "environment": {
-        "GITHUB_PERSONAL_ACCESS_TOKEN": "${GITHUB_TOKEN}"
-      },
-      "enabled": true
-    },
-    "google-workspace": {
-      "type": "local",
-      "command": ["docker", "run", "--rm", "-i", "mcp-server-setup-google-workspace-mcp"],
-      "enabled": true
-    },
-    "yahoo-mail": {
-      "type": "remote",
-      "url": "http://yahoo-mail-mcp:3101/mcp/sse",
-      "enabled": true
-    },
-    "tado": {
-      "type": "remote",
-      "url": "http://tado-mcp:3102/sse",
+      "url": "http://mcp-gateway:3100/sse",
       "enabled": true
     }
   }

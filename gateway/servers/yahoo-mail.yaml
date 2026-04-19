@@ -1,0 +1,5 @@
+name: yahoo-mail
+type: server
+title: Yahoo Mail
+image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
+description: Yahoo Mail MCP server for email access

@@ -1,0 +1,5 @@
+name: playwright
+type: server
+title: Playwright
+image: mcr.microsoft.com/playwright/mcp:latest
+description: Microsoft Playwright MCP server

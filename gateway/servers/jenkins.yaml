@@ -1,0 +1,7 @@
+name: jenkins
+type: remote
+title: Jenkins
+remote:
+  url: http://jenkins:3100/sse
+  transport_type: sse
+description: Jenkins MCP server (remote)

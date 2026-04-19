@@ -1,0 +1,5 @@
+name: tado
+type: server
+title: Tado
+image: registry:5000/offbeat-iot/tado-mcp:latest
+description: Tado MCP server for home climate control

@@ -1,0 +1,5 @@
+name: todoist
+type: server
+title: Todoist
+image: koki-develop/todoist-mcp-server:latest
+description: Todoist MCP server

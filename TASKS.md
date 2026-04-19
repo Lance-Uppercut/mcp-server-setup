@@ -1,47 +1,156 @@
-# MCP Server Infrastructure Tasks
+# Docker MCP Gateway Migration Tasks
 
-## Current Priorities
+## Phase 1. Remove Obsolete Open WebUI Artifacts
+- [x] Delete `open-webui-compose.yml`
+  Verification:
+  - [x] File no longer exists in repo
+- [x] Remove Open WebUI sections from `README.md`
+  Verification:
+  - [x] `README.md` contains no `Open WebUI` setup section
+  - [x] `README.md` contains no `TOOL_SERVER_CONNECTIONS` examples
 
-### 1. Docker Registry Integration & Publishing
-**Goal:** Automate publishing of MCP server images to the internal registry.
+## Phase 2. Create Checked-In Gateway Config Structure
+- [x] Create `gateway/profiles/default.yaml`
+  Verification:
+  - [x] File exists
+- [x] Create per-server definitions under `gateway/servers/`
+  Verification:
+  - [x] `gateway/servers/yahoo-mail.yaml` exists
+  - [x] `gateway/servers/alertmanager.yaml` exists
+  - [x] `gateway/servers/tado.yaml` exists
+  - [x] `gateway/servers/google-workspace.yaml` exists
+  - [x] `gateway/servers/todoist.yaml` exists
+  - [x] `gateway/servers/asus-router.yaml` exists
+  - [x] `gateway/servers/playwright.yaml` exists
+  - [x] `gateway/servers/github.yaml` exists
+  - [x] `gateway/servers/jenkins.yaml` exists
+  - [x] `gateway/servers/portainer_build1.yaml` exists
+  - [x] `gateway/servers/portainer_build2.yaml` exists
+  - [x] `gateway/servers/portainer_monitor.yaml` exists
+  - [x] `gateway/servers/portainer_observability1.yaml` exists
+  - [x] `gateway/servers/portainer_tools1.yaml` exists
+  - [x] `gateway/servers/portainer_production1.yaml` exists
+- [x] Add all intended servers to `gateway/profiles/default.yaml`
+  Verification:
+  - [x] Default profile references all intended servers exactly once
 
-- [ ] **Jenkinsfile Enhancements**
-  - [ ] Integrate [shared-jenkins-pipelines](https://github.com/Offbeat-IoT/shared-jenkins-pipelines) steps.
-  - [ ] Implement SHA-5/Short SHA tagging logic.
-  - [ ] Add `Publish` stage to `Jenkinsfile`.
-  - [ ] Implement tagging strategy: `${BRANCH_NAME}`, `${BRANCH_NAME}-${SHORT_SHA}`.
-- [ ] **Image Configuration**
-  - [ ] Update `docker-compose.yml` to use registry-prefixed image names where appropriate.
-  - [ ] Decide on re-hosting strategy for external images (e.g., Alertmanager).
+## Phase 3. Add Shared Gateway Service
+- [x] Add `mcp-gateway` service to `docker-compose.yml`
+  Verification:
+  - [x] `docker compose config` succeeds
+- [x] Mount checked-in gateway config into the gateway service
+  Verification:
+  - [x] Running gateway can access configured profiles and server definitions
+- [x] Expose only the shared gateway SSE endpoint for clients
+  Verification:
+  - [x] No direct per-server client-facing MCP ports remain
+- [x] Add gateway healthcheck
+  Verification:
+  - [x] Gateway reports healthy after startup
 
-### 2. Infrastructure & Connectivity
-- [ ] **SSH Configuration**
-  - [ ] Configure SSH server entries in `ssh/config`. Check ansible-server-setup for hosts
-  - [ ] Implement SSH access to multiple servers using `AiondaDotCom/mcp-ssh`.
+## Phase 4. Migrate Server Definitions Behind Gateway
+- [ ] Configure custom/local servers in gateway:
+  - [ ] `yahoo-mail`
+  - [ ] `google-workspace`
+  - [ ] `tado`
+  - [ ] `asus-router`
+  Verification:
+  - [ ] Each backend contributes tools through gateway `tools/list`
+- [ ] Configure upstream-backed servers in gateway:
+  - [ ] `github`
+  - [ ] `playwright`
+  - [ ] `alertmanager`
+  - [ ] `todoist` or record fallback decision
+  - [ ] `portainer_build1`
+  - [ ] `portainer_build2`
+  - [ ] `portainer_monitor`
+  - [ ] `portainer_observability1`
+  - [ ] `portainer_tools1`
+  - [ ] `portainer_production1`
+  Verification:
+  - [ ] Each backend contributes tools through gateway `tools/list`
+- [ ] Configure `jenkins` as remote
+  Verification:
+  - [ ] Jenkins-backed tools appear through gateway `tools/list`
 
-## Pending MCP Integrations
-- [ ] **Enhanced Testing:** Expand `TESTING.md` with integration test scenarios for multi-server workflows.
+## Phase 5. Preserve Stateful Data
+- [ ] Preserve Google Workspace data mounts and file paths
+  Verification:
+  - [ ] Existing Google OAuth/account files remain accessible at expected paths
+- [ ] Preserve Tado token persistence
+  Verification:
+  - [ ] `data/tado/tokens.json` is still used by migrated setup
+- [ ] Preserve Playwright data if required
+  Verification:
+  - [ ] Playwright sessions/storage still work if expected
 
----
+## Phase 6. Rework Secret Wiring
+- [ ] Map Jenkins-rendered runtime secrets to gateway/backend configuration
+  Verification:
+  - [ ] Gateway starts without missing required secret errors
+- [ ] Map credentials for GitHub, Yahoo, Google, Todoist, Router, Alertmanager, Portainer, and Jenkins
+  Verification:
+  - [ ] Each configured backend authenticates successfully or fails with a targeted actionable error
 
-## Status Archive (from 2026-03-31)
+## Phase 7. Repoint Clients To Gateway Only
+- [x] Update `opencode/config/opencode.json` to use only the gateway SSE endpoint
+  Verification:
+  - [x] No per-server MCP entries remain
+  - [ ] `opencode mcp list` shows the gateway-backed configuration working
+- [x] Remove direct client config examples from docs
+  Verification:
+  - [x] `README.md` contains one supported MCP connection path
 
-### Acceptance Criteria - MCP Server Integration
-- [x] Yahoo Mail: `✓ connected` (SSE)
-- [x] Alertmanager: `✓ connected` (SSE)
-- [x] Tado: `✗ failed` (requires docker-compose exec in OpenCode container)
+## Phase 8. Rewrite Verification Around Gateway
+- [x] Rewrite `scripts/verify-mcp-servers.sh` to validate the gateway rather than direct ports
+  Verification:
+  - [x] Script checks gateway health
+  - [x] Script runs MCP Inspector against gateway SSE
+  - [x] Script verifies expected backend/tool presence
+- [x] Update Jenkins `Verify MCP servers` stage to use gateway verification only
+  Verification:
+  - [x] Jenkins verify stage no longer references direct per-server URLs or ports
 
-### Verified Working
-- [x] Yahoo Mail (SSE, Port 3101)
-- [x] Alertmanager (SSE, Port 8001)
-- [x] Tado (stdio, requires manual exec)
-- [x] Todoist (ghcr.io/koki-develop/todoist-mcp-server)
-- [x] GitHub (github/github-mcp-server)
-- [x] Google Workspace (j3k0/mcp-google-workspace)
-- [x] Jenkins (Spring Boot custom implementation)
+## Phase 9. Remove Direct Exposure And Obsolete Services
+- [x] Remove direct exposed ports for old standalone MCP services
+  Verification:
+  - [x] Compose shows only gateway as the client-facing MCP endpoint (legacy services moved to profile)
+- [x] Remove standalone services no longer needed because gateway launches them directly
+  Verification:
+  - [x] Old services moved to 'legacy' profile, not started by default
 
-### Completed Documentation
-- [x] Claude Desktop configuration examples.
-- [x] API token setup guide.
-- [x] Open WebUI configuration.
-- [x] Localhost URL mapping.
+## Phase 10. Reduce Image Maintenance
+- [x] Remove obsolete wrapper image builds from `Jenkinsfile`
+  Verification:
+  - [x] Build stage no longer builds deprecated wrapper images
+- [ ] Remove `servers/portainer-mcp/` if no longer needed
+  Verification:
+  - [ ] No compose, build, or docs references remain
+- [x] Remove `servers/todoist-mcp/` from Jenkins build (upstream image used in gateway)
+  Verification:
+  - [x] Jenkins no longer builds todoist-mcp
+
+## Phase 11. Update Documentation
+- [x] Rewrite `README.md` for gateway-first usage
+  Verification:
+  - [x] README documents only the gateway-based architecture
+- [ ] Update `TESTING.md` to use gateway plus MCP Inspector
+  Verification:
+  - [ ] Testing steps no longer rely on direct server ports
+- [x] Document the single supported SSE endpoint
+  Verification:
+  - [x] One canonical client connection example exists
+
+## Phase 12. Final Validation
+- [ ] Start the migrated stack
+  Verification:
+  - [ ] Gateway is healthy
+- [ ] Run gateway verification script
+  Verification:
+  - [ ] Script passes
+- [ ] Confirm expected backends appear in gateway `tools/list`
+  Verification:
+  - [ ] All intended servers are represented
+- [ ] Confirm docs/configs no longer reference direct MCP server access
+  Verification:
+  - [ ] No stale per-server client guidance remains

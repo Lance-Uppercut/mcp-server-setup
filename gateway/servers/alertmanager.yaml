@@ -1,0 +1,5 @@
+name: alertmanager
+type: server
+title: Alertmanager
+image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
+description: Alertmanager MCP server

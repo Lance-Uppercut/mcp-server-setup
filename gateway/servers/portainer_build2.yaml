@@ -1,0 +1,12 @@
+name: portainer_build2
+type: server
+title: Portainer Build2
+image: ghcr.io/portainer/portainer-mcp:latest
+description: Portainer MCP server for build2
+config:
+  - name: server
+    type: string
+    default: http://build2.home:6500
+secrets:
+  - name: token
+    description: Portainer API token

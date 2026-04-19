@@ -58,6 +58,17 @@ check_endpoint() {
   fi
 }
 
+check_health() {
+  local url="$1"
+  local http_code
+  http_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null || true)"
+  if [[ "$http_code" == "200" ]]; then
+    pass "gateway:health $url HTTP 200"
+  else
+    fail "gateway:health $url HTTP ${http_code:-n/a}"
+  fi
+}
+
 check_tools() {
   local name="$1"
   local url="$2"
@@ -95,18 +106,12 @@ check_tools() {
   echo "  -> $(echo "$output" | tail -n 8 | tr '\n' ' ')"
 }
 
-echo "=== MCP verify start host=$HOST ==="
+echo "=== MCP Gateway verify start host=$HOST ==="
 
 if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
   if [[ "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
     if command -v docker >/dev/null 2>&1; then
-      check_container "yahoo" '^yahoo-mail-mcp\|'
-      check_container "alertmanager" '^alertmanager-mcp\|'
-      check_container "tado" '^tado-mcp\|'
-      check_container "google" 'google-workspace-mcp.*\|'
-      check_container "todoist" '^todoist-mcp\|'
-      check_container "asus-router" '^asus-router-mcp\|'
-      check_container "playwright" '^playwright-mcp\|'
+      check_container "mcp-gateway" '^mcp-gateway|'
     else
       warn "docker not available; skipping container checks"
     fi
@@ -115,27 +120,16 @@ if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
   fi
 fi
 
-check_endpoint "yahoo" "http://${HOST}:3101/mcp/sse"
-check_endpoint "alertmanager" "http://${HOST}:8001/sse"
-check_endpoint "tado" "http://${HOST}:3102/sse"
-check_endpoint "google" "http://${HOST}:3103/sse"
-check_endpoint "todoist" "http://${HOST}:3104/sse"
-check_endpoint "asus-router" "http://${HOST}:3105/sse"
-check_endpoint "playwright" "http://${HOST}:3106/sse"
+check_health "http://${HOST}:3100/health"
+check_endpoint "gateway" "http://${HOST}:3100/sse"
+check_tools "gateway" "http://${HOST}:3100/sse"
 
-check_tools "yahoo" "http://${HOST}:3101/mcp/sse"
-check_tools "alertmanager" "http://${HOST}:8001/sse"
-check_tools "tado" "http://${HOST}:3102/sse"
-check_tools "google" "http://${HOST}:3103/sse"
-check_tools "todoist" "http://${HOST}:3104/sse"
-check_tools "asus-router" "http://${HOST}:3105/sse"
-check_tools "playwright" "http://${HOST}:3106/sse"
-
-echo "=== MCP verify summary: PASS=$PASS FAIL=$FAIL WARN=$WARN ==="
+echo "=== MCP Gateway verify summary: PASS=$PASS FAIL=$FAIL WARN=$WARN ==="
 if [[ $FAIL -gt 0 ]]; then
   echo "Suggested next steps:"
   echo "  - docker compose ps"
-  echo "  - docker compose logs --tail 200 <service>"
+  echo "  - docker compose logs --tail 200 mcp-gateway"
+  echo "  - curl -f http://localhost:3100/health"
   echo "  - retry tools/list via inspector for failing URL(s)"
   exit 1
 fi
