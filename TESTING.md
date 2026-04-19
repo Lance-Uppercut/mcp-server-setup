@@ -1,342 +1,116 @@
-# MCP Server Testing Criteria
+# Gateway-First Testing
 
-An MCP server is considered **working** when it meets all of the following criteria:
+Use this file to verify MCP in the current gateway-first setup.
 
----
+## 1) Single supported client endpoint
 
-## 1. Build & Compile
+Only connect clients to the MCP Gateway SSE endpoint:
 
-The server must compile/build without errors.
+- build1: `http://build1:3100/sse`
+- local: `http://localhost:3100/sse`
 
-### Node.js (Yahoo Mail, Jenkins)
-```bash
-# Yahoo Mail
-cd servers/yahoo-mail-mcp-server
-npm install
-npm run build
+Do not connect clients directly to per-server ports for normal usage.
 
-# Jenkins
-cd servers/jenkins-mcp
-npm install
-npm run build
-```
-
-### Java (Tado)
-```bash
-cd servers/tado-mcp
-mvn clean package -DskipTests
-```
-
-### Docker
-```bash
-docker compose build <service-name>
-```
-
----
-
-## 2. MCP Inspector Verification
-
-Each server must be verified with MCP Inspector before being considered working.
-
-### Prerequisites
-```bash
-# Install MCP Inspector globally
-npm install -g @anthropic-ai/mcp-inspector
-# or
-npx @anthropic-ai/mcp-inspector
-```
-
-### Yahoo Mail (SSE Transport)
+## 2) MCP Gateway health and SSE checks
 
 ```bash
-# Start the server in SSE mode
-docker compose up -d yahoo-mail-mcp
+# Health
+curl -fsS http://localhost:3100/health
 
-# Verify with curl (basic connectivity)
-curl -s http://localhost:3101/mcp/sse | head -c 500
-
-# Verify with MCP Inspector
-npx @anthropic-ai/mcp-inspector \
-  --transport sse \
-  --url http://localhost:3101/mcp/sse
-
-# Inside inspector, test tools:
-# - tools/list → should return 11 tools (list_emails, read_email, search_emails, etc.)
-# - tools/call with name="list_folders" → should return folder list
-# - tools/call with name="list_emails" and arguments={"count": 3} → should return emails
+# SSE handshake (expect HTTP 200 and event-stream response)
+curl -i -H "Accept: text/event-stream" http://localhost:3100/sse --max-time 5
 ```
 
-**Expected Tools:**
-- `list_emails` - List recent emails
-- `read_email` - Read email content by UID
-- `search_emails` - Search with filters
-- `delete_emails` - Move to trash
-- `archive_emails` - Archive messages
-- `mark_as_read` - Mark as read
-- `mark_as_unread` - Mark as unread
-- `flag_emails` - Flag/star
-- `unflag_emails` - Remove flag
-- `move_emails` - Move to folder
-- `list_folders` - List all folders
-
-### Tado (SSE Transport)
+Optional against build1:
 
 ```bash
-# Build and run the container
-docker compose build tado-mcp
-docker compose up -d tado-mcp
-
-# Verify SSE endpoint responds
-curl -s http://localhost:3102/sse -H "Accept: text/event-stream" --max-time 3
-
-# Verify protocol/tools list through inspector CLI
-npx @modelcontextprotocol/inspector --cli http://localhost:3102/sse --transport sse --method tools/list
+curl -fsS http://build1:3100/health
+curl -i -H "Accept: text/event-stream" http://build1:3100/sse --max-time 5
 ```
 
-**Expected Tools:**
-- `get_zones` - List all zones
-- `get_zone_state` - Get zone state
-- `set_temperature` - Set temperature
-- `reset_zone` - Reset to schedule
-- `get_home_info` - Home information
-- `get_weather` - Weather data
+## 3) MCP Inspector notes (legacy SSE behavior)
 
-### Alertmanager (SSE Transport)
+Use Inspector when debugging transport and tool discovery.
+
+Setup:
 
 ```bash
-# Start the server
-docker compose up -d alertmanager-mcp
-
-# Verify SSE endpoint responds
-curl -s -H "Accept: text/event-stream" http://localhost:8001/sse &
-sleep 2
-curl -s -X POST http://localhost:8001/messages -H "Content-Type: application/json" \
-  -d '{"jsonrpc":"2.0","id":1,"method":"initialize","params":{"protocolVersion":"2024-11-05","capabilities":{},"clientInfo":{"name":"test","version":"1.0"}}}'
-
-# Expected: {"jsonrpc":"2.0","id":1,"result":{"protocolVersion":"2024-11-05",...}}
-
-# Verify with MCP list (OpenCode shows as connected when SSE endpoint responds)
-docker compose exec opencode opencode mcp list
+npx -y @modelcontextprotocol/inspector --help
 ```
 
-**Known Issue:** The alertmanager-mcp-server may log `TypeError: 'NoneType' object is not callable` errors during certain operations, but the server continues to function. This is a known issue in the upstream library.
-
-**Expected Tools:**
-- `get_status` - Get Alertmanager status
-- `get_alerts` - List alerts (with pagination)
-- `get_silences` - List silences (with pagination)
-- `post_silence` - Create a silence
-- `delete_silence` - Delete a silence
-- `get_receivers` - List receivers
-- `get_alert_groups` - List alert groups
-
-### Jenkins (SSE Transport)
+Gateway CLI check:
 
 ```bash
-# Build and start the server
-docker compose build jenkins-mcp
-docker compose up -d jenkins-mcp
-
-# Verify SSE endpoint responds
-curl -s http://localhost:3103/sse -H "Accept: text/event-stream" --max-time 3
-
-# Verify with MCP list (OpenCode shows as connected when SSE endpoint responds)
-docker compose exec opencode opencode mcp list
+npx -y @modelcontextprotocol/inspector --cli http://localhost:3100/sse --transport sse --method tools/list
 ```
 
-**Expected Tools:**
-- `get_all_items` - Get all jobs
-- `get_item` - Get specific job
-- `get_item_config` - Get job config XML
-- `build_item` - Trigger a build
-- `get_all_nodes` - Get all nodes
-- `get_node` - Get specific node
-- `get_queue_item` - Get queue item
-- `get_running_builds` - Get running builds
-- `get_build` - Get build info
-- `get_build_console_tail` - Get console output
-- `stop_build` - Stop a build
-- And many more...
+Legacy SSE note:
 
----
+- Legacy SSE servers emit an `event: endpoint` message.
+- The `data` value includes the session URL used for POST calls (for example `/sse?sessionid=...`).
+- Use the emitted endpoint exactly when doing manual protocol tests.
 
-## 3. Reusable Configuration (`./opencode/config/opencode.json`)
+Quick stream check:
 
-Each server must have a properly formatted configuration entry in `opencode/config/opencode.json` for reuse in other MCP clients.
-
-### SSE Servers (Yahoo Mail, Alertmanager, Tado, Jenkins)
-```json
-{
-  "mcp": {
-    "yahoo-mail": {
-      "type": "remote",
-      "url": "http://yahoo-mail-mcp:3101/mcp/sse",
-      "enabled": true
-    },
-    "alertmanager": {
-      "type": "remote",
-      "url": "http://alertmanager-mcp:8001/sse",
-      "enabled": true
-    },
-    "tado": {
-      "type": "remote",
-      "url": "http://tado-mcp:3102/sse",
-      "enabled": true
-    },
-    "jenkins": {
-      "type": "remote",
-      "url": "http://jenkins-mcp:3103/sse",
-      "enabled": true
-    }
-  }
-}
-```
-
-### Local Servers (GitHub, Google Workspace)
-```json
-{
-  "mcpServers": {
-    "github": { "command": "docker", "args": ["compose", "-f", "/path/to/docker-compose.yml", "run", "--rm", "github-mcp"] },
-    "google-workspace": { "command": "docker", "args": ["compose", "-f", "/path/to/docker-compose.yml", "run", "--rm", "google-workspace-mcp"] }
-  }
-}
-```
-
-**Note:** Use `docker exec` directly, not `docker compose exec`, as the opencode container has access to the docker socket.
-
-### Verification
 ```bash
-# Validate JSON syntax
-cat opencode/config/opencode.json | jq .
-
-# Check all servers have entries
-jq '.mcp | keys' opencode/config/opencode.json
+curl -N -H "Accept: text/event-stream" http://localhost:3100/sse
 ```
 
----
+Common Inspector error: `Cannot POST /register`
 
-## 4. OpenCode Integration Verification
+This is usually an endpoint or transport mismatch.
 
-The server must be accessible via OpenCode CLI and its tools must appear in tool listings.
+1. Confirm URL is an SSE endpoint (for gateway: `/sse`).
+2. Force SSE transport (`--transport sse`).
+3. Prefer Inspector CLI (`--cli ... --method tools/list`) for gateway and legacy SSE debugging.
 
-### Prerequisites
+## 4) OpenCode verification
+
 ```bash
-# Start OpenCode container
+# if needed
 docker compose --profile opencode up -d opencode
-docker compose exec opencode bash
-```
 
-### Inside OpenCode Container
-
-```bash
-# Check MCP server status
-opencode mcp list
-
-# Expected output should show:
-# - yahoo-mail: connected
-# - alertmanager: connected
-# - tado: connected
-
-# Start interactive session and query tools
-opencode
-
-# Inside the interactive session:
-/opencode List all your MCP tools
-
-# Expected: All tools from configured servers should appear
-# - Yahoo Mail tools: list_emails, read_email, search_emails, etc.
-# - Alertmanager tools: list_alerts, etc.
-# - Tado tools: get_zones, get_zone_state, etc.
-```
-
-### Verification Commands
-
-```bash
-# Method 1: MCP list command
+# verify MCP connection inside OpenCode container
 docker compose exec opencode opencode mcp list
-
-# Method 2: Inside interactive session
-docker compose exec opencode opencode --prompt "Show me my emails from Yahoo Mail"
-docker compose exec opencode opencode --prompt "Show me current alerts from Alertmanager"
-docker compose exec opencode opencode --prompt "Show me my Tado zones"
-
-# Method 3: Direct tool call (if supported)
-docker compose exec opencode opencode --tools "yahoo-mail" --prompt "list_emails"
 ```
 
----
+Expected: gateway is connected and tools are available.
 
-## Server-Specific Notes
+## 5) Jenkins remote backend config (expected)
 
-### Yahoo Mail
-- Requires `YAHOO_EMAIL` and `YAHOO_APP_PASSWORD` environment variables
-- Test credentials must have access to actual email account
-- SSE endpoint: `http://localhost:3101/mcp/sse`
+Current expected Jenkins backend values:
 
-### Tado
-- Requires OAuth tokens (stored in `/data/tokens.json` or env vars)
-- Uses SSE transport at `http://localhost:3102/sse`
-- Automatically refreshes OAuth tokens and persists them to `/data/tokens.json`
+```yaml
+url: http://monitor:8085/mcp-server/mcp
+transport: streamable-http
+headers:
+  Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
+```
 
-### Alertmanager
-- Requires `ALERTMANAGER_URL` environment variable
-- Optional basic auth via `ALERTMANAGER_USERNAME` and `ALERTMANAGER_PASSWORD`
-- SSE endpoint: `http://localhost:8001/sse`
+## 6) CI verification command
 
----
-
-## Testing Checklist
-
-| Criteria | Yahoo Mail | Tado | Alertmanager |
-|----------|------------|------|--------------|
-| Compiles/Builds | ✅ Built | ✅ Built | ✅ Pulled |
-| MCP Inspector - tools/list | ✅ Verified | ✅ 7 tools | ✅ Works |
-| MCP Inspector - tools/call | ✅ Verified | ✅ Verified | ⚠️ May log errors |
-| opencode/config/opencode.json entry | ✅ Configured | ✅ Configured | ✅ Configured |
-| opencode mcp list shows | ✅ connected | ✅ connected | ✅ connected |
-| Tools appear in opencode | ✅ Works | ✅ Works | ✅ Works |
-
-**Legend:**
-- ✅ = Working
-- ⚠️ = Works with known issues
-
----
-
-## Troubleshooting
-
-### Connection Refused
 ```bash
-# Check if container is running
-docker compose ps
-
-# Check logs
-docker compose logs <service-name>
-
-# Verify port is exposed
-docker compose port <service-name> <port>
+./scripts/verify-mcp-servers.sh --host localhost
 ```
 
-### Authentication Errors
+## 7) Troubleshooting
+
 ```bash
-# Check environment variables are set
-docker compose exec <service-name> env | grep -E "^(YAHOO|TOKEN|PASSWORD)"
+# gateway state
+docker compose ps mcp-gateway
 
-# Verify credentials are correct
-docker compose exec <service-name> <test-command>
+# gateway logs
+docker compose logs --tail 200 mcp-gateway
+
+# endpoint checks
+curl -fsS http://localhost:3100/health
+curl -i -H "Accept: text/event-stream" http://localhost:3100/sse --max-time 5
+
+# protocol check
+npx -y @modelcontextprotocol/inspector --cli http://localhost:3100/sse --transport sse --method tools/list
+
+# full scripted verification
+./scripts/verify-mcp-servers.sh --host localhost
 ```
 
-### MCP Inspector Connection Issues
-```bash
-# For SSE servers, verify endpoint is accessible
-curl -v http://localhost:3101/mcp/sse
-
-# For stdio servers, verify the command works
-docker compose run --rm <service-name>
-```
-
-### Alertmanager TypeError
-If you see `TypeError: 'NoneType' object is not callable` in Alertmanager logs:
-- This is a known issue in the ntk148v/alertmanager-mcp-server library
-- The server continues to function despite the error
-- If all requests fail, restart the container: `docker restart alertmanager-mcp`
-- Verify connectivity: Check that `http://observability1:9093` is reachable from the container
+If Inspector fails while health passes, treat it as a transport mismatch first (wrong URL, wrong transport, or legacy SSE flow confusion).
