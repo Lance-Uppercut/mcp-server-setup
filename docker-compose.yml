@@ -6,12 +6,11 @@ services:
     command:
       - --transport=sse
       - --port=3100
-      - --profile=default
-      - --config=/gateway/profiles
+      - --config=/gateway/catalog.yaml
     ports:
       - "3100:3100"
     volumes:
-      - ./gateway/profiles:/gateway/profiles:ro
+      - ./gateway:/gateway:ro
       - /var/run/docker.sock:/var/run/docker.sock
     extra_hosts:
       - "host.docker.internal:host-gateway"

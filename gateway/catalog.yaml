@@ -1,0 +1,6 @@
+mcpServers:
+  jenkins:
+    type: remote
+    remote:
+      url: http://jenkins:3100/sse
+      transport_type: sse
