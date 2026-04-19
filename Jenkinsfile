@@ -168,7 +168,7 @@ PY
                         timeout(time: 5, unit: 'MINUTES') {
                             sh "${composeCommand} pull"
                             sh "${composeCommand} up -d"
-                            sh "${composeCommand} up -d mcp-gateway"
+                            sh "sleep 5 && ${composeCommand} logs mcp-gateway"
                         }
 
                         sh """
