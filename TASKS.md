@@ -96,7 +96,7 @@
 - [x] Update `opencode/config/opencode.json` to use only the gateway SSE endpoint
   Verification:
   - [x] No per-server MCP entries remain
-  - [ ] `opencode mcp list` shows the gateway-backed configuration working
+  - [x] `opencode mcp list` shows the gateway-backed configuration working
 - [x] Remove direct client config examples from docs
   Verification:
   - [x] `README.md` contains one supported MCP connection path
