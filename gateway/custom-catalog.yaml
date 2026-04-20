@@ -41,18 +41,6 @@ registry:
       url: http://host.docker.internal:3105/sse
       transport_type: sse
 
-  playwright:
-    title: Playwright
-    description: Playwright MCP server
-    type: server
-    image: mcp/playwright
-
-  github:
-    title: GitHub
-    description: GitHub MCP server
-    type: server
-    image: mcp/github
-
   jenkins:
     title: Jenkins
     description: Jenkins MCP server (remote)
