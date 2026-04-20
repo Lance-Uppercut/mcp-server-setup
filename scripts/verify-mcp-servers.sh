@@ -140,6 +140,24 @@ check_tools() {
   echo "  -> $(echo "$output" | tail -n 8 | tr '\n' ' ')"
 }
 
+check_gateway_backend_errors() {
+  if ! command -v docker >/dev/null 2>&1; then
+    warn "backend-errors docker not available; skipping gateway log diagnostics"
+    return
+  fi
+
+  local logs failures
+  logs="$(docker logs mcp-gateway --tail 250 2>&1 || true)"
+  failures="$(echo "$logs" | grep -E "Can't start [a-zA-Z0-9_-]+:|secret not found|No such image" | sed 's/^ *//' | sort -u)"
+
+  if [[ -n "$failures" ]]; then
+    warn "backend-errors detected startup issues in mcp-gateway logs"
+    echo "$failures" | sed 's/^/  -> /'
+  else
+    pass "backend-errors no startup errors found in recent mcp-gateway logs"
+  fi
+}
+
 echo "=== MCP Gateway verify start host=$HOST ==="
 
 if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
@@ -157,6 +175,12 @@ fi
 check_health "http://${HOST}:3100/health"
 check_endpoint "gateway" "http://${HOST}:3100/sse"
 check_tools "gateway" "http://${HOST}:3100/sse"
+
+if [[ "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
+  check_gateway_backend_errors
+else
+  warn "host=$HOST is remote; skipping local gateway log diagnostics"
+fi
 
 echo "=== MCP Gateway verify summary: PASS=$PASS FAIL=$FAIL WARN=$WARN ==="
 if [[ $FAIL -gt 0 ]]; then
