@@ -3,42 +3,42 @@ registry:
     title: Yahoo Mail
     description: Yahoo Mail MCP server (legacy remote)
     remote:
-      url: http://yahoo-mail-mcp:3101/sse
+      url: http://host.docker.internal:3101/sse
       transport_type: sse
 
   alertmanager:
     title: Alertmanager
     description: Alertmanager MCP server (legacy remote)
     remote:
-      url: http://alertmanager-mcp:8001/sse
+      url: http://host.docker.internal:8001/sse
       transport_type: sse
 
   tado:
     title: Tado
     description: Tado MCP server (legacy remote)
     remote:
-      url: http://tado-mcp:3102/sse
+      url: http://host.docker.internal:3102/sse
       transport_type: sse
 
   google-workspace:
     title: Google Workspace
     description: Google Workspace MCP server (legacy remote)
     remote:
-      url: http://google-workspace-mcp:3103/sse
+      url: http://host.docker.internal:3103/sse
       transport_type: sse
 
   todoist:
     title: Todoist
     description: Todoist MCP server (legacy remote)
     remote:
-      url: http://todoist-mcp:3104/sse
+      url: http://host.docker.internal:3104/sse
       transport_type: sse
 
   asus-router:
     title: ASUS Router
     description: ASUS Router MCP server (legacy remote)
     remote:
-      url: http://asus-router-mcp:3105/sse
+      url: http://host.docker.internal:3105/sse
       transport_type: sse
 
   jenkins:
