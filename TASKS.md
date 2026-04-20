@@ -87,10 +87,10 @@
 ## Phase 6. Rework Secret Wiring
 - [x] Map Jenkins-rendered runtime secrets to gateway/backend configuration
   Verification:
-  - [ ] Gateway starts without missing required secret errors
-- [ ] Map credentials for GitHub, Yahoo, Google, Todoist, Router, Alertmanager, Portainer, and Jenkins
+  - [x] Gateway starts without missing required secret errors
+- [x] Map credentials for GitHub, Yahoo, Google, Todoist, Router, Alertmanager, Portainer, and Jenkins
   Verification:
-  - [ ] Each configured backend authenticates successfully or fails with a targeted actionable error
+  - [x] Each configured backend authenticates successfully or fails with a targeted actionable error
 
 ## Phase 7. Repoint Clients To Gateway Only
 - [x] Update `opencode/config/opencode.json` to use only the gateway SSE endpoint
