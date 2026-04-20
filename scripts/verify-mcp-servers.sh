@@ -49,8 +49,15 @@ check_container() {
 check_endpoint() {
   local name="$1"
   local url="$2"
-  local http_code
-  http_code="$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: text/event-stream' --max-time 8 "$url" 2>/dev/null || true)"
+  local http_code=""
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    http_code="$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: text/event-stream' --max-time 8 "$url" 2>/dev/null || true)"
+    if [[ "$http_code" == "200" ]]; then
+      break
+    fi
+    sleep 3
+  done
   if [[ "$http_code" == "200" ]]; then
     pass "endpoint:$name $url HTTP 200"
   else
@@ -60,8 +67,15 @@ check_endpoint() {
 
 check_health() {
   local url="$1"
-  local http_code
-  http_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null || true)"
+  local http_code=""
+  local attempt
+  for attempt in 1 2 3 4 5; do
+    http_code="$(curl -sS -o /dev/null -w '%{http_code}' --max-time 5 "$url" 2>/dev/null || true)"
+    if [[ "$http_code" == "200" ]]; then
+      break
+    fi
+    sleep 2
+  done
   if [[ "$http_code" == "200" ]]; then
     pass "gateway:health $url HTTP 200"
   else
