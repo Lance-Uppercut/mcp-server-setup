@@ -1,7 +1,7 @@
 services:
   # MCP Gateway - single entry point for all MCP servers
   mcp-gateway:
-    image: docker/mcp-gateway@sha256:8ec27ad208049882e4242e7828a4032de0cde5490fc4148f8c4f6485dd3c4f6d
+    image: docker/mcp-gateway:latest
     container_name: mcp-gateway
     environment:
       - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_TOKEN:-}
@@ -27,8 +27,9 @@ services:
     command:
       - --transport=sse
       - --port=3100
-      - --catalog=/gateway/custom-catalog.yaml
-      - --servers=yahoo-mail,alertmanager,tado,google-workspace,todoist,asus-router,playwright,github
+      - --config=/gateway/catalog.yaml
+      - --additional-catalog=/gateway/custom-catalog.yaml
+      - --servers=yahoo-mail,alertmanager,tado,google-workspace,todoist,asus-router,playwright,github,jenkins,portainer_build1,portainer_build2,portainer_monitor,portainer_observability1,portainer_tools1,portainer_production1
     ports:
       - "3100:3100"
     volumes:
