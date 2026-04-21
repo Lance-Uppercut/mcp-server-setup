@@ -29,7 +29,6 @@ services:
       - --port=3100
       - --config=/gateway/catalog.yaml
       - --additional-catalog=/gateway/custom-catalog.yaml
-      - --servers=yahoo-mail,alertmanager,tado,google-workspace,todoist,asus-router,playwright,github,jenkins,portainer_build1,portainer_build2,portainer_monitor,portainer_observability1,portainer_tools1,portainer_production1
     ports:
       - "3100:3100"
     volumes:

@@ -115,6 +115,13 @@ check_tools() {
       return
     fi
 
+    local non_internal_count
+    non_internal_count="$(echo "$tool_names" | grep -Ev '^(mcp-add|mcp-find|mcp-remove|mcp-exec|mcp-config-set|mcp-discover|code-mode)$' | sed '/^$/d' | wc -l | tr -d ' ')"
+    if [[ "$non_internal_count" -eq 0 ]]; then
+      fail "tools:$name only internal dynamic tools are available"
+      return
+    fi
+
     pass "tools:$name discovered ${tool_count} tools"
 
     local missing=()

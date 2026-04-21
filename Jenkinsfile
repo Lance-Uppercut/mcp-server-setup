@@ -209,6 +209,8 @@ PY
                             docker exec "\$tadoContainer" chmod 600 /data/tokens.json
 
                             ${composeCommand} restart google-workspace-mcp tado-mcp
+
+                            node ./scripts/activate-gateway-servers.js "http://localhost:3100/sse" "github,playwright,yahoo-mail,alertmanager,tado,google-workspace,todoist,asus-router,jenkins"
                         """
 
                         sh "${composeCommand} ps"
