@@ -12,6 +12,20 @@ function getClient(urlObj) {
   return urlObj.protocol === "https:" ? https : http
 }
 
+function parseSseChunk(rawChunk) {
+  const lines = rawChunk.split(/\r?\n/)
+  const dataLines = []
+  for (const line of lines) {
+    if (line.startsWith("data:")) {
+      dataLines.push(line.slice(5).trimStart())
+    }
+  }
+  if (dataLines.length === 0) {
+    return null
+  }
+  return dataLines.join("\n")
+}
+
 function postJson(urlObj, path, payload) {
   return new Promise((resolve, reject) => {
     const body = JSON.stringify(payload)
@@ -45,8 +59,36 @@ function postJson(urlObj, path, payload) {
   })
 }
 
-function discoverSession(urlObj) {
+function createSseSession(urlObj) {
   return new Promise((resolve, reject) => {
+    let settled = false
+    let buffer = ""
+    const pending = new Map()
+
+    function settleError(error) {
+      if (!settled) {
+        settled = true
+        reject(error)
+      }
+    }
+
+    function resolvePending(message) {
+      if (!message || typeof message !== "object") {
+        return
+      }
+      const { id } = message
+      if (id === undefined || id === null) {
+        return
+      }
+      const key = String(id)
+      const handler = pending.get(key)
+      if (!handler) {
+        return
+      }
+      pending.delete(key)
+      handler(message)
+    }
+
     const client = getClient(urlObj)
     const req = client.get(
       {
@@ -57,29 +99,103 @@ function discoverSession(urlObj) {
         headers: { Accept: "text/event-stream" },
       },
       (res) => {
-        let buffer = ""
+        if (res.statusCode !== 200) {
+          settleError(new Error(`SSE connect failed with HTTP ${res.statusCode || 0}`))
+          req.destroy()
+          return
+        }
+
         res.setEncoding("utf8")
         res.on("data", (chunk) => {
           buffer += chunk
-          const match = buffer.match(/data:\s*(\/sse\?sessionid=[^\s\r\n]+)/)
-          if (match) {
-            resolve({
-              sessionPath: match[1],
-              close: () => req.destroy(),
-            })
+
+          while (true) {
+            const separatorMatch = buffer.match(/\r?\n\r?\n/)
+            if (!separatorMatch || separatorMatch.index === undefined) {
+              break
+            }
+
+            const separatorIndex = separatorMatch.index
+            const separatorLength = separatorMatch[0].length
+
+            const rawEvent = buffer.slice(0, separatorIndex)
+            buffer = buffer.slice(separatorIndex + separatorLength)
+            const data = parseSseChunk(rawEvent)
+            if (!data) {
+              continue
+            }
+
+            const sessionMatch = data.match(/^(\/sse\?sessionid=[^\s\r\n]+)$/)
+            if (sessionMatch && !settled) {
+              settled = true
+              const sessionPath = sessionMatch[1]
+              const api = {
+                sessionPath,
+                close: () => req.destroy(),
+                waitForResponse: (id, timeoutMs = 20000) =>
+                  new Promise((resolveResponse, rejectResponse) => {
+                    const key = String(id)
+                    const timeout = setTimeout(() => {
+                      pending.delete(key)
+                      rejectResponse(new Error(`Timed out waiting for response id=${key}`))
+                    }, timeoutMs)
+                    pending.set(key, (message) => {
+                      clearTimeout(timeout)
+                      resolveResponse(message)
+                    })
+                  }),
+              }
+              resolve(api)
+              continue
+            }
+
+            try {
+              const parsed = JSON.parse(data)
+              resolvePending(parsed)
+            } catch (error) {
+              // Ignore non-JSON events.
+            }
           }
         })
         res.on("end", () => {
-          reject(new Error("SSE stream ended before session endpoint was emitted"))
+          settleError(new Error("SSE stream ended unexpectedly"))
         })
       },
     )
 
-    req.on("error", reject)
+    req.on("error", settleError)
     req.setTimeout(10000, () => {
       req.destroy(new Error("Timed out waiting for SSE session endpoint"))
     })
   })
+}
+
+function describeRpcMessage(message) {
+  if (!message || typeof message !== "object") {
+    return "invalid response"
+  }
+  if (message.error) {
+    const code = message.error.code !== undefined ? ` code=${message.error.code}` : ""
+    const text = message.error.message || "unknown error"
+    return `error${code}: ${text}`
+  }
+  if (message.result !== undefined) {
+    return "ok"
+  }
+  return "no result"
+}
+
+async function callRpc(urlObj, session, payload, timeoutMs = 25000) {
+  const response = await postJson(urlObj, session.sessionPath, payload)
+  if (response.status !== 200 && response.status !== 202) {
+    throw new Error(`HTTP ${response.status} for method ${payload.method}`)
+  }
+
+  if (payload.id === undefined || payload.id === null) {
+    return null
+  }
+
+  return session.waitForResponse(payload.id, timeoutMs)
 }
 
 async function main() {
@@ -95,10 +211,9 @@ async function main() {
   }
 
   const urlObj = new URL(gatewayUrl)
-  const session = await discoverSession(urlObj)
-  const sessionPath = session.sessionPath
+  const session = await createSseSession(urlObj)
 
-  await postJson(urlObj, sessionPath, {
+  const initializeResponse = await callRpc(urlObj, session, {
     jsonrpc: "2.0",
     id: 1,
     method: "initialize",
@@ -108,17 +223,32 @@ async function main() {
       clientInfo: { name: "gateway-activator", version: "1.0" },
     },
   })
+  console.log(`initialize -> ${describeRpcMessage(initializeResponse)}`)
 
-  await postJson(urlObj, sessionPath, {
+  await callRpc(urlObj, session, {
     jsonrpc: "2.0",
     method: "notifications/initialized",
     params: {},
   })
 
+  const discoverResponse = await callRpc(urlObj, session, {
+    jsonrpc: "2.0",
+    id: 2,
+    method: "tools/call",
+    params: {
+      name: "mcp-discover",
+      arguments: {},
+    },
+  })
+  console.log(`mcp-discover -> ${describeRpcMessage(discoverResponse)}`)
+
+  await delay(1200)
+
   for (const server of servers) {
-    const response = await postJson(urlObj, sessionPath, {
+    const requestId = `add-${server}`
+    const addResponse = await callRpc(urlObj, session, {
       jsonrpc: "2.0",
-      id: `add-${server}`,
+      id: requestId,
       method: "tools/call",
       params: {
         name: "mcp-add",
@@ -126,8 +256,21 @@ async function main() {
       },
     })
 
-    console.log(`mcp-add ${server} -> HTTP ${response.status}`)
+    console.log(`mcp-add ${server} -> ${describeRpcMessage(addResponse)}`)
     await delay(1500)
+  }
+
+  const toolsResponse = await callRpc(urlObj, session, {
+    jsonrpc: "2.0",
+    id: 999,
+    method: "tools/list",
+    params: {},
+  })
+
+  if (toolsResponse && toolsResponse.result && Array.isArray(toolsResponse.result.tools)) {
+    console.log(`tools/list -> ${toolsResponse.result.tools.length} tools visible after activation`)
+  } else {
+    console.log(`tools/list -> ${describeRpcMessage(toolsResponse)}`)
   }
 
   session.close()
