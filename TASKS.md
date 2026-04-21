@@ -74,12 +74,12 @@
   - [ ] Jenkins-backed tools appear through gateway `tools/list`
 
 ## Phase 5. Preserve Stateful Data
-- [ ] Preserve Google Workspace data mounts and file paths
+- [x] Preserve Google Workspace data mounts and file paths
   Verification:
-  - [ ] Existing Google OAuth/account files remain accessible at expected paths
-- [ ] Preserve Tado token persistence
+  - [x] Existing Google OAuth/account files remain accessible at expected paths
+- [x] Preserve Tado token persistence
   Verification:
-  - [ ] `data/tado/tokens.json` is still used by migrated setup
+  - [x] `data/tado/tokens.json` is still used by migrated setup
 - [ ] Preserve Playwright data if required
   Verification:
   - [ ] Playwright sessions/storage still work if expected
