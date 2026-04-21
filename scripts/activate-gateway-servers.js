@@ -127,7 +127,7 @@ async function main() {
     })
 
     console.log(`mcp-add ${server} -> HTTP ${response.status}`)
-    await delay(300)
+    await delay(1500)
   }
 
   session.close()

@@ -4,7 +4,7 @@ registry:
     description: Yahoo Mail MCP server (legacy remote)
     type: remote
     remote:
-      url: http://host.docker.internal:3101/sse
+      url: http://host.docker.internal:3101/mcp/sse
       transport_type: sse
 
   alertmanager:
@@ -53,7 +53,7 @@ registry:
     type: remote
     remote:
       url: http://monitor:8085/mcp-server/mcp
-      transport_type: http
+      transport_type: streamable-http
       headers:
         Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
 
