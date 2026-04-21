@@ -80,9 +80,9 @@
 - [x] Preserve Tado token persistence
   Verification:
   - [x] `data/tado/tokens.json` is still used by migrated setup
-- [ ] Preserve Playwright data if required
+- [x] Preserve Playwright data if required
   Verification:
-  - [ ] Playwright sessions/storage still work if expected
+  - [x] Playwright sessions/storage still work if expected
 
 ## Phase 6. Rework Secret Wiring
 - [x] Map Jenkins-rendered runtime secrets to gateway/backend configuration
@@ -153,4 +153,4 @@
   - [ ] All intended servers are represented
 - [ ] Confirm docs/configs no longer reference direct MCP server access
   Verification:
-  - [ ] No stale per-server client guidance remains
+  - [x] No stale per-server client guidance remains
