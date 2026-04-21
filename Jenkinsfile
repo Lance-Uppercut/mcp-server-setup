@@ -211,6 +211,9 @@ PY
                             ${composeCommand} restart google-workspace-mcp tado-mcp
 
                             node ./scripts/activate-gateway-servers.js "http://localhost:3100/sse" "github,playwright,yahoo-mail,alertmanager,tado,google-workspace,todoist,asus-router,jenkins"
+
+                            echo "MCP Gateway logs after activation (tail 200):"
+                            docker logs "\$mcpGatewayContainer" --tail 200 || true
                         """
 
                         sh "${composeCommand} ps"
