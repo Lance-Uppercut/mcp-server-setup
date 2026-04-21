@@ -158,6 +158,37 @@ check_gateway_backend_errors() {
   fi
 }
 
+check_stateful_data() {
+  if ! command -v docker >/dev/null 2>&1; then
+    warn "stateful docker not available; skipping data persistence checks"
+    return
+  fi
+
+  local google_container tado_container
+  google_container="$(docker ps --filter "name=google-workspace-mcp" --format '{{.Names}}' | head -n 1)"
+  tado_container="$(docker ps --filter "name=tado-mcp" --format '{{.Names}}' | head -n 1)"
+
+  if [[ -n "$google_container" ]]; then
+    if docker exec "$google_container" sh -lc 'test -f /data/google-workspace/.gauth.json && test -f /data/google-workspace/.accounts.json && test -d /data/google-workspace/credentials' >/dev/null 2>&1; then
+      pass "stateful:google workspace OAuth/account paths accessible"
+    else
+      fail "stateful:google missing OAuth/account files or credentials directory"
+    fi
+  else
+    warn "stateful:google container not running; skipping"
+  fi
+
+  if [[ -n "$tado_container" ]]; then
+    if docker exec "$tado_container" sh -lc 'test -f /data/tokens.json' >/dev/null 2>&1; then
+      pass "stateful:tado tokens.json present at /data/tokens.json"
+    else
+      fail "stateful:tado missing /data/tokens.json"
+    fi
+  else
+    warn "stateful:tado container not running; skipping"
+  fi
+}
+
 echo "=== MCP Gateway verify start host=$HOST ==="
 
 if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
@@ -178,6 +209,7 @@ check_tools "gateway" "http://${HOST}:3100/sse"
 
 if [[ "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
   check_gateway_backend_errors
+  check_stateful_data
 else
   warn "host=$HOST is remote; skipping local gateway log diagnostics"
 fi
