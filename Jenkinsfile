@@ -194,8 +194,6 @@ PY
                             if [ -n "\$mcpGatewayContainer" ]; then
                                 docker cp ./gateway/catalog.yaml "\$mcpGatewayContainer:/gateway/catalog.yaml"
                                 docker cp ./gateway/custom-catalog.yaml "\$mcpGatewayContainer:/gateway/custom-catalog.yaml"
-                                ${composeCommand} restart mcp-gateway
-                                mcpGatewayContainer=\$(${composeCommand} ps -q mcp-gateway)
                                 sleep 10
                                 echo "MCP Gateway startup logs (tail 120):"
                                 docker logs "\$mcpGatewayContainer" --tail 120 || true
