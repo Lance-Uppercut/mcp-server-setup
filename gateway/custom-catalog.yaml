@@ -12,8 +12,8 @@ registry:
     dynamic:
       tools: true
     remote:
-      url: http://monitor:8085/mcp-server/mcp
-      transport_type: streamable-http
+      url: http://monitor:8085/mcp-server/sse
+      transport_type: sse
       headers:
         Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
 
@@ -25,6 +25,8 @@ registry:
     source: ""
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
     tools: []
     prompts: 0
     resources: {}
@@ -44,6 +46,8 @@ registry:
     source: ""
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
     tools: []
     prompts: 0
     resources: {}
@@ -63,6 +67,8 @@ registry:
     source: ""
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
     tools: []
     prompts: 0
     resources: {}
@@ -82,6 +88,8 @@ registry:
     source: ""
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
     tools: []
     prompts: 0
     resources: {}
@@ -101,6 +109,8 @@ registry:
     source: ""
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
     tools: []
     prompts: 0
     resources: {}
@@ -120,6 +130,8 @@ registry:
     source: ""
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
     tools: []
     prompts: 0
     resources: {}
