@@ -28,7 +28,7 @@ services:
       - --transport=sse
       - --port=3100
       - --config=/gateway/catalog.yaml
-      - --additional-catalog=/gateway/custom-catalog.yaml
+      - --catalog=/gateway/custom-catalog.yaml
       - --secrets=docker-desktop:/gateway/runtime-secrets/gateway-secrets.env
     ports:
       - "3100:3100"
