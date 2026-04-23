@@ -234,38 +234,37 @@ async function main() {
   for (const server of servers) {
     const requestId = `add-${server}`
     try {
-      const addResponse = await callRpc(
-        urlObj,
-        session,
-        {
-          jsonrpc: "2.0",
-          id: requestId,
-          method: "tools/call",
-          params: {
-            name: "mcp-add",
-            arguments: { name: server, activate: true },
-          },
+      const httpResponse = await postJson(urlObj, session.sessionPath, {
+        jsonrpc: "2.0",
+        id: requestId,
+        method: "tools/call",
+        params: {
+          name: "mcp-add",
+          arguments: { name: server, activate: true },
         },
-        12000,
-      )
-      console.log(`mcp-add ${server} -> ${describeRpcMessage(addResponse)}`)
+      })
+      console.log(`mcp-add ${server} -> HTTP ${httpResponse.status}`)
     } catch (error) {
-      console.log(`mcp-add ${server} -> no rpc response (${error.message})`)
+      console.log(`mcp-add ${server} -> request failed (${error.message})`)
     }
     await delay(1500)
   }
 
-  const toolsResponse = await callRpc(urlObj, session, {
-    jsonrpc: "2.0",
-    id: 999,
-    method: "tools/list",
-    params: {},
-  })
+  try {
+    const toolsResponse = await callRpc(urlObj, session, {
+      jsonrpc: "2.0",
+      id: 999,
+      method: "tools/list",
+      params: {},
+    })
 
-  if (toolsResponse && toolsResponse.result && Array.isArray(toolsResponse.result.tools)) {
-    console.log(`tools/list -> ${toolsResponse.result.tools.length} tools visible after activation`)
-  } else {
-    console.log(`tools/list -> ${describeRpcMessage(toolsResponse)}`)
+    if (toolsResponse && toolsResponse.result && Array.isArray(toolsResponse.result.tools)) {
+      console.log(`tools/list -> ${toolsResponse.result.tools.length} tools visible after activation`)
+    } else {
+      console.log(`tools/list -> ${describeRpcMessage(toolsResponse)}`)
+    }
+  } catch (error) {
+    console.log(`tools/list -> request failed (${error.message})`)
   }
 
   session.close()
