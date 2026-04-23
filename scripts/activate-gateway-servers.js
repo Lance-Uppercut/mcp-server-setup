@@ -231,32 +231,27 @@ async function main() {
     params: {},
   })
 
-  const discoverResponse = await callRpc(urlObj, session, {
-    jsonrpc: "2.0",
-    id: 2,
-    method: "tools/call",
-    params: {
-      name: "mcp-discover",
-      arguments: {},
-    },
-  })
-  console.log(`mcp-discover -> ${describeRpcMessage(discoverResponse)}`)
-
-  await delay(1200)
-
   for (const server of servers) {
     const requestId = `add-${server}`
-    const addResponse = await callRpc(urlObj, session, {
-      jsonrpc: "2.0",
-      id: requestId,
-      method: "tools/call",
-      params: {
-        name: "mcp-add",
-        arguments: { name: server, activate: true },
-      },
-    })
-
-    console.log(`mcp-add ${server} -> ${describeRpcMessage(addResponse)}`)
+    try {
+      const addResponse = await callRpc(
+        urlObj,
+        session,
+        {
+          jsonrpc: "2.0",
+          id: requestId,
+          method: "tools/call",
+          params: {
+            name: "mcp-add",
+            arguments: { name: server, activate: true },
+          },
+        },
+        12000,
+      )
+      console.log(`mcp-add ${server} -> ${describeRpcMessage(addResponse)}`)
+    } catch (error) {
+      console.log(`mcp-add ${server} -> no rpc response (${error.message})`)
+    }
     await delay(1500)
   }
 

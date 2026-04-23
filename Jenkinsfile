@@ -122,6 +122,18 @@ pipeline {
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
                         sh 'chmod 600 ./runtime-secrets/runtime.env'
 
+                        def gatewaySecretsContent = [
+                            "github.personal_access_token=${quoteEnvValue(env.SECRET_GITHUB_TOKEN)}",
+                            "portainer_build1.token=${quoteEnvValue(env.SECRET_PORTAINER_BUILD1_TOKEN)}",
+                            "portainer_build2.token=${quoteEnvValue(env.SECRET_PORTAINER_BUILD2_TOKEN)}",
+                            "portainer_monitor.token=${quoteEnvValue(env.SECRET_PORTAINER_MONITOR_TOKEN)}",
+                            "portainer_observability1.token=${quoteEnvValue(env.SECRET_PORTAINER_OBSERVABILITY1_TOKEN)}",
+                            "portainer_tools1.token=${quoteEnvValue(env.SECRET_PORTAINER_TOOLS1_TOKEN)}",
+                            "portainer_production1.token=${quoteEnvValue(env.SECRET_PORTAINER_PRODUCTION1_TOKEN)}"
+                        ].join('\n') + '\n'
+                        writeFile(file: './runtime-secrets/gateway-secrets.env', text: gatewaySecretsContent)
+                        sh 'chmod 600 ./runtime-secrets/gateway-secrets.env'
+
                         sh '''
                             python3 - <<'PY'
 import json
@@ -229,6 +241,23 @@ PY
                 script {
                     sh 'chmod +x ./scripts/verify-mcp-servers.sh'
                     sh './scripts/verify-mcp-servers.sh --host localhost'
+                }
+            }
+        }
+
+        stage('Verify in OpenCode container') {
+            steps {
+                script {
+                    def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
+                    sh """
+                        ${composeCommand} --profile opencode run --rm opencode sh -lc '
+                            set -e
+                            output=\$(npx -y @modelcontextprotocol/inspector --cli "http://mcp-gateway:3100/sse" --transport sse --method tools/list 2>&1)
+                            echo "\$output" | grep -q "jenkins" || { echo "Missing jenkins tools in opencode container"; exit 1; }
+                            echo "\$output" | grep -q "portainer" || { echo "Missing portainer tools in opencode container"; exit 1; }
+                            echo "PASS | opencode container sees jenkins and portainer tools"
+                        '
+                    """
                 }
             }
         }
