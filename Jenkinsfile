@@ -175,6 +175,12 @@ PY
 
                         def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
 
+                        sh '''
+                            echo "Workspace gateway directory contents:"
+                            ls -la ./gateway || true
+                            test -f ./gateway/custom-catalog.yaml || { echo "Missing ./gateway/custom-catalog.yaml in workspace"; exit 1; }
+                        '''
+
                         sh script: "${composeCommand} down --remove-orphans", returnStatus: true
 
                         timeout(time: 5, unit: 'MINUTES') {
