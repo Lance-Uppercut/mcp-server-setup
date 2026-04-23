@@ -1,0 +1,132 @@
+registry:
+  jenkins:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Jenkins
+    description: Jenkins MCP server (remote)
+    ref: ""
+    source: ""
+    type: remote
+    tools: []
+    prompts: 0
+    resources: {}
+    dynamic:
+      tools: true
+    remote:
+      url: http://monitor:8085/mcp-server/mcp
+      transport_type: streamable-http
+      headers:
+        Authorization: Basic b3BlbmNvZGU6MTE5YjYwZjA3MDFkYzU3MGY5NTU4M2U3NjZjZDk2OGY5MA==
+
+  portainer_build1:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Portainer Build1
+    description: Portainer MCP server for build1
+    ref: ""
+    source: ""
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    tools: []
+    prompts: 0
+    resources: {}
+    env:
+      - name: PORTAINER_SERVER
+        value: http://build1.home:6500
+    secrets:
+      - name: portainer_build1.token
+        env: PORTAINER_TOKEN
+        description: Portainer API token
+
+  portainer_build2:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Portainer Build2
+    description: Portainer MCP server for build2
+    ref: ""
+    source: ""
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    tools: []
+    prompts: 0
+    resources: {}
+    env:
+      - name: PORTAINER_SERVER
+        value: http://build2.home:6500
+    secrets:
+      - name: portainer_build2.token
+        env: PORTAINER_TOKEN
+        description: Portainer API token
+
+  portainer_monitor:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Portainer Monitor
+    description: Portainer MCP server for monitor
+    ref: ""
+    source: ""
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    tools: []
+    prompts: 0
+    resources: {}
+    env:
+      - name: PORTAINER_SERVER
+        value: http://192.168.1.60:6500
+    secrets:
+      - name: portainer_monitor.token
+        env: PORTAINER_TOKEN
+        description: Portainer API token
+
+  portainer_observability1:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Portainer Observability1
+    description: Portainer MCP server for observability1
+    ref: ""
+    source: ""
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    tools: []
+    prompts: 0
+    resources: {}
+    env:
+      - name: PORTAINER_SERVER
+        value: http://192.168.1.80:6500
+    secrets:
+      - name: portainer_observability1.token
+        env: PORTAINER_TOKEN
+        description: Portainer API token
+
+  portainer_tools1:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Portainer Tools1
+    description: Portainer MCP server for tools1
+    ref: ""
+    source: ""
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    tools: []
+    prompts: 0
+    resources: {}
+    env:
+      - name: PORTAINER_SERVER
+        value: http://192.168.1.17:6500
+    secrets:
+      - name: portainer_tools1.token
+        env: PORTAINER_TOKEN
+        description: Portainer API token
+
+  portainer_production1:
+    dateAdded: "2026-04-23T00:00:00Z"
+    title: Portainer Production1
+    description: Portainer MCP server for production1
+    ref: ""
+    source: ""
+    type: server
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    tools: []
+    prompts: 0
+    resources: {}
+    env:
+      - name: PORTAINER_SERVER
+        value: http://192.168.1.85:6500
+    secrets:
+      - name: portainer_production1.token
+        env: PORTAINER_TOKEN
+        description: Portainer API token

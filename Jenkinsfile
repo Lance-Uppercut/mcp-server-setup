@@ -43,7 +43,6 @@ pipeline {
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server'],
                         [imageName: 'tado-mcp', context: './servers/tado-mcp'],
-                        [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
                         [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp']
                     ]
                     
@@ -123,6 +122,18 @@ pipeline {
                         writeFile(file: './runtime-secrets/runtime.env', text: runtimeEnvContent)
                         sh 'chmod 600 ./runtime-secrets/runtime.env'
 
+                        def gatewaySecretsContent = [
+                            "github.personal_access_token=${quoteEnvValue(env.SECRET_GITHUB_TOKEN)}",
+                            "portainer_build1.token=${quoteEnvValue(env.SECRET_PORTAINER_BUILD1_TOKEN)}",
+                            "portainer_build2.token=${quoteEnvValue(env.SECRET_PORTAINER_BUILD2_TOKEN)}",
+                            "portainer_monitor.token=${quoteEnvValue(env.SECRET_PORTAINER_MONITOR_TOKEN)}",
+                            "portainer_observability1.token=${quoteEnvValue(env.SECRET_PORTAINER_OBSERVABILITY1_TOKEN)}",
+                            "portainer_tools1.token=${quoteEnvValue(env.SECRET_PORTAINER_TOOLS1_TOKEN)}",
+                            "portainer_production1.token=${quoteEnvValue(env.SECRET_PORTAINER_PRODUCTION1_TOKEN)}"
+                        ].join('\n') + '\n'
+                        writeFile(file: './runtime-secrets/gateway-secrets.env', text: gatewaySecretsContent)
+                        sh 'chmod 600 ./runtime-secrets/gateway-secrets.env'
+
                         sh '''
                             python3 - <<'PY'
 import json
@@ -164,6 +175,12 @@ PY
 
                         def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
 
+                        sh '''
+                            echo "Workspace gateway directory contents:"
+                            ls -la ./gateway || true
+                            test -f ./gateway/custom-catalog.yaml || { echo "Missing ./gateway/custom-catalog.yaml in workspace"; exit 1; }
+                        '''
+
                         sh script: "${composeCommand} down --remove-orphans", returnStatus: true
 
                         timeout(time: 5, unit: 'MINUTES') {
@@ -172,6 +189,15 @@ PY
                         }
 
                         sh """
+                            mcpGatewayContainer=\$(${composeCommand} ps -q mcp-gateway)
+                            echo "MCP Gateway container: \$mcpGatewayContainer"
+                            if [ -n "\$mcpGatewayContainer" ]; then
+                                docker cp ./gateway/catalog.yaml "\$mcpGatewayContainer:/gateway/catalog.yaml"
+                                docker cp ./gateway/custom-catalog.yaml "\$mcpGatewayContainer:/gateway/custom-catalog.yaml"
+                                sleep 10
+                                echo "MCP Gateway startup logs (tail 120):"
+                                docker logs "\$mcpGatewayContainer" --tail 120 || true
+                            fi
                             googleContainer=\$(${composeCommand} ps -q google-workspace-mcp)
                             tadoContainer=\$(${composeCommand} ps -q tado-mcp)
 
@@ -203,6 +229,20 @@ PY
                             docker exec "\$tadoContainer" chmod 600 /data/tokens.json
 
                             ${composeCommand} restart google-workspace-mcp tado-mcp
+
+                            node ./scripts/activate-gateway-servers.js "http://localhost:3100/sse" "github,playwright,jenkins,portainer_build1,portainer_build2,portainer_monitor,portainer_observability1,portainer_tools1,portainer_production1"
+
+                            echo "Gateway catalog probe for portainer:" 
+                            npx -y @modelcontextprotocol/inspector --cli "http://localhost:3100/sse" --transport sse --method tools/call --tool-name mcp-find --tool-arg query=portainer || true
+                            echo "Gateway catalog probe for jenkins:" 
+                            npx -y @modelcontextprotocol/inspector --cli "http://localhost:3100/sse" --transport sse --method tools/call --tool-name mcp-find --tool-arg query=jenkins || true
+                            echo "Gateway mounted custom-catalog.yaml (first 140 lines):"
+                            docker inspect "\$mcpGatewayContainer" --format '{{json .Mounts}}' || true
+                            docker exec "\$mcpGatewayContainer" sh -lc 'ls -la /gateway || true' || true
+                            docker exec "\$mcpGatewayContainer" sh -lc 'awk "NR<=140{print}" /gateway/custom-catalog.yaml || true' || true
+
+                            echo "MCP Gateway logs after activation (tail 200):"
+                            docker logs "\$mcpGatewayContainer" --tail 200 || true
                         """
 
                         sh "${composeCommand} ps"
@@ -218,6 +258,23 @@ PY
                 script {
                     sh 'chmod +x ./scripts/verify-mcp-servers.sh'
                     sh './scripts/verify-mcp-servers.sh --host localhost'
+                }
+            }
+        }
+
+        stage('Verify in OpenCode container') {
+            steps {
+                script {
+                    def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
+                    sh """
+                        ${composeCommand} --profile opencode run --rm --entrypoint sh opencode -lc '
+                            set -e
+                            output=\$(npx -y @modelcontextprotocol/inspector --cli "http://mcp-gateway:3100/sse" --transport sse --method tools/list 2>&1)
+                            echo "\$output" | grep -q "jenkins" || { echo "Missing jenkins tools in opencode container"; exit 1; }
+                            echo "\$output" | grep -q "portainer" || { echo "Missing portainer tools in opencode container"; exit 1; }
+                            echo "PASS | opencode container sees jenkins and portainer tools"
+                        '
+                    """
                 }
             }
         }

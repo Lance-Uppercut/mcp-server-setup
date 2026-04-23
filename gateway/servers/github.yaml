@@ -1,0 +1,5 @@
+name: github
+type: server
+title: GitHub
+image: ghcr.io/github/github-mcp-server:latest
+description: GitHub MCP server

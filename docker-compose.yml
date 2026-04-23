@@ -1,4 +1,52 @@
 services:
+  # MCP Gateway - single entry point for all MCP servers
+  mcp-gateway:
+    image: docker/mcp-gateway:latest
+    container_name: mcp-gateway
+    environment:
+      - GITHUB_PERSONAL_ACCESS_TOKEN=${GITHUB_TOKEN:-}
+      - GITHUB_TOKEN=${GITHUB_TOKEN:-}
+      - YAHOO_EMAIL=${YAHOO_EMAIL:-}
+      - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD:-}
+      - GOOGLE_CLIENT_ID=${GOOGLE_CLIENT_ID:-}
+      - GOOGLE_CLIENT_SECRET=${GOOGLE_CLIENT_SECRET:-}
+      - TODOIST_API_TOKEN=${TODOIST_API_TOKEN:-}
+      - ROUTER_PASSWORD=${ROUTER_PASSWORD:-}
+      - ALERTMANAGER_URL=${ALERTMANAGER_URL:-}
+      - ALERTMANAGER_USERNAME=${ALERTMANAGER_USERNAME:-}
+      - ALERTMANAGER_PASSWORD=${ALERTMANAGER_PASSWORD:-}
+      - PORTAINER_BUILD1_TOKEN=${PORTAINER_BUILD1_TOKEN:-}
+      - PORTAINER_BUILD2_TOKEN=${PORTAINER_BUILD2_TOKEN:-}
+      - PORTAINER_MONITOR_TOKEN=${PORTAINER_MONITOR_TOKEN:-}
+      - PORTAINER_OBSERVABILITY1_TOKEN=${PORTAINER_OBSERVABILITY1_TOKEN:-}
+      - PORTAINER_TOOLS1_TOKEN=${PORTAINER_TOOLS1_TOKEN:-}
+      - PORTAINER_PRODUCTION1_TOKEN=${PORTAINER_PRODUCTION1_TOKEN:-}
+      - JENKINS_URL=${JENKINS_URL:-}
+      - JENKINS_USERNAME=${JENKINS_USERNAME:-}
+      - JENKINS_API_TOKEN=${JENKINS_API_TOKEN:-}
+    command:
+      - --transport=sse
+      - --port=3100
+      - --config=/gateway/catalog.yaml
+      - --additional-catalog=/gateway/custom-catalog.yaml
+      - --secrets=docker-desktop:/gateway/runtime-secrets/gateway-secrets.env
+    ports:
+      - "3100:3100"
+    volumes:
+      - ./gateway:/gateway
+      - ./runtime-secrets:/gateway/runtime-secrets:ro
+      - /var/run/docker.sock:/var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    healthcheck:
+      test: ["CMD", "wget", "-q", "-O-", "http://localhost:3100/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 30s
+    networks:
+      - mcp-network
+
   # OpenCode CLI (MCP Client)
   opencode:
     environment:
@@ -33,7 +81,8 @@ services:
     networks:
       - mcp-network
 
-  # Yahoo Mail MCP Server (SSE mode)
+  # Yahoo Mail MCP Server (legacy - managed through gateway now)
+  # DEPRECATED: Use mcp-gateway instead
   yahoo-mail-mcp:
     image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
     container_name: yahoo-mail-mcp
@@ -44,6 +93,8 @@ services:
       - PORT=3101
     ports:
       - "3101:3101"
+    profiles:
+      - legacy
     networks:
       - mcp-network
 
@@ -60,6 +111,8 @@ services:
       - MCP_PORT=8001
     ports:
       - "8001:8001"
+    profiles:
+      - legacy
     healthcheck:
       test:
         - CMD-SHELL
@@ -93,6 +146,8 @@ services:
       - PORT=3103
     ports:
       - "3103:3103"
+    profiles:
+      - legacy
     volumes:
       - ${MCP_DATA_DIR:-./data}/google-workspace:/data/google-workspace
     networks:
@@ -110,6 +165,8 @@ services:
       - TADO_TOKENS_FILE=/data/tokens.json
     ports:
       - "3102:3102"
+    profiles:
+      - legacy
     volumes:
       - ${MCP_DATA_DIR:-./data}/tado:/data
     networks:
@@ -130,10 +187,13 @@ services:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
     ports:
       - "3104:3104"
+    profiles:
+      - legacy
     networks:
       - mcp-network
 
-  # ASUS Router MCP Server
+  # ASUS Router MCP Server (legacy - managed through gateway now)
+  # DEPRECATED: Use mcp-gateway instead
   asus-router-mcp:
     image: registry:5000/offbeat-iot/asus-router-mcp:latest
     container_name: asus-router-mcp
@@ -141,7 +201,7 @@ services:
       context: ./servers/asus-router-mcp
       dockerfile: Dockerfile
     environment:
-      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.18}
       - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
       - ROUTER_PASSWORD=${ROUTER_PASSWORD}
       - USE_SSL=${USE_SSL:-true}
@@ -150,6 +210,8 @@ services:
       - MCP_PORT=3105
     ports:
       - "3105:3105"
+    profiles:
+      - legacy
     networks:
       - mcp-network
 
@@ -169,6 +231,8 @@ services:
       - PLAYWRIGHT_MCP_PORT=3106
     ports:
       - "3106:3106"
+    profiles:
+      - legacy
     volumes:
       - ${MCP_DATA_DIR:-./data}/playwright:/home/user
     networks:

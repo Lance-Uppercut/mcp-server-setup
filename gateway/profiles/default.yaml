@@ -1,0 +1,20 @@
+version: 1
+id: default
+name: Default
+description: Default MCP server profile
+servers:
+  - file://servers/yahoo-mail.yaml
+  - file://servers/alertmanager.yaml
+  - file://servers/tado.yaml
+  - file://servers/google-workspace.yaml
+  - file://servers/todoist.yaml
+  - file://servers/asus-router.yaml
+  - file://servers/playwright.yaml
+  - file://servers/github.yaml
+  - file://servers/jenkins.yaml
+  - file://servers/portainer_build1.yaml
+  - file://servers/portainer_build2.yaml
+  - file://servers/portainer_monitor.yaml
+  - file://servers/portainer_observability1.yaml
+  - file://servers/portainer_tools1.yaml
+  - file://servers/portainer_production1.yaml
