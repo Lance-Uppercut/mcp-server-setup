@@ -250,7 +250,7 @@ PY
                 script {
                     def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
                     sh """
-                        ${composeCommand} --profile opencode run --rm opencode sh -lc '
+                        ${composeCommand} --profile opencode run --rm --entrypoint sh opencode -lc '
                             set -e
                             output=\$(npx -y @modelcontextprotocol/inspector --cli "http://mcp-gateway:3100/sse" --transport sse --method tools/list 2>&1)
                             echo "\$output" | grep -q "jenkins" || { echo "Missing jenkins tools in opencode container"; exit 1; }
