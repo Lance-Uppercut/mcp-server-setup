@@ -222,7 +222,7 @@ PY
 
                             ${composeCommand} restart google-workspace-mcp tado-mcp
 
-                            node ./scripts/activate-gateway-servers.js "http://localhost:3100/sse" "github,playwright,yahoo-mail,alertmanager,tado,google-workspace,todoist,asus-router,jenkins,portainer_build1,portainer_build2,portainer_monitor,portainer_observability1,portainer_tools1,portainer_production1"
+                            node ./scripts/activate-gateway-servers.js "http://localhost:3100/sse" "github,playwright,jenkins,portainer_build1,portainer_build2,portainer_monitor,portainer_observability1,portainer_tools1,portainer_production1"
 
                             echo "MCP Gateway logs after activation (tail 200):"
                             docker logs "\$mcpGatewayContainer" --tail 200 || true
