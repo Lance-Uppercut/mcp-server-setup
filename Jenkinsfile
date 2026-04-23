@@ -229,7 +229,9 @@ PY
                             echo "Gateway catalog probe for jenkins:" 
                             npx -y @modelcontextprotocol/inspector --cli "http://localhost:3100/sse" --transport sse --method tools/call --tool-name mcp-find --tool-arg query=jenkins || true
                             echo "Gateway mounted custom-catalog.yaml (first 140 lines):"
-                            docker exec "\$mcpGatewayContainer" sh -lc 'awk "NR<=140{print}" /gateway/custom-catalog.yaml' || true
+                            docker inspect "\$mcpGatewayContainer" --format '{{json .Mounts}}' || true
+                            docker exec "\$mcpGatewayContainer" sh -lc 'ls -la /gateway || true' || true
+                            docker exec "\$mcpGatewayContainer" sh -lc 'awk "NR<=140{print}" /gateway/custom-catalog.yaml || true' || true
 
                             echo "MCP Gateway logs after activation (tail 200):"
                             docker logs "\$mcpGatewayContainer" --tail 200 || true
