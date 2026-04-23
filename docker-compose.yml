@@ -29,10 +29,12 @@ services:
       - --port=3100
       - --config=/gateway/catalog.yaml
       - --additional-catalog=/gateway/custom-catalog.yaml
+      - --secrets=docker-desktop:/gateway/runtime-secrets/gateway-secrets.env
     ports:
       - "3100:3100"
     volumes:
       - ./gateway:/gateway
+      - ./runtime-secrets:/gateway/runtime-secrets:ro
       - /var/run/docker.sock:/var/run/docker.sock
     extra_hosts:
       - "host.docker.internal:host-gateway"

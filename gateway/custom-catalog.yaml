@@ -1,8 +1,22 @@
 registry:
+  github:
+    title: GitHub
+    description: GitHub MCP server
+    type: server
+    image: ghcr.io/github/github-mcp-server:latest
+
+  playwright:
+    title: Playwright
+    description: Microsoft Playwright MCP server
+    type: server
+    image: mcr.microsoft.com/playwright/mcp:latest
+
   yahoo-mail:
     title: Yahoo Mail
     description: Yahoo Mail MCP server (legacy remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://host.docker.internal:3101/mcp/sse
       transport_type: sse
@@ -11,6 +25,8 @@ registry:
     title: Alertmanager
     description: Alertmanager MCP server (legacy remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://host.docker.internal:8001/sse
       transport_type: sse
@@ -19,6 +35,8 @@ registry:
     title: Tado
     description: Tado MCP server (legacy remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://host.docker.internal:3102/sse
       transport_type: sse
@@ -27,6 +45,8 @@ registry:
     title: Google Workspace
     description: Google Workspace MCP server (legacy remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://host.docker.internal:3103/sse
       transport_type: sse
@@ -35,6 +55,8 @@ registry:
     title: Todoist
     description: Todoist MCP server (legacy remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://host.docker.internal:3104/sse
       transport_type: sse
@@ -43,6 +65,8 @@ registry:
     title: ASUS Router
     description: ASUS Router MCP server (legacy remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://host.docker.internal:3105/sse
       transport_type: sse
@@ -51,6 +75,8 @@ registry:
     title: Jenkins
     description: Jenkins MCP server (remote)
     type: remote
+    dynamic:
+      tools: true
     remote:
       url: http://monitor:8085/mcp-server/mcp
       transport_type: streamable-http
@@ -62,33 +88,87 @@ registry:
     description: Portainer MCP server
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
+    config:
+      - name: server
+        type: string
+        default: http://build1.home:6500
+    secrets:
+      - name: token
+        description: Portainer API token
 
   portainer_build2:
     title: Portainer Build2
     description: Portainer MCP server
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
+    config:
+      - name: server
+        type: string
+        default: http://build2.home:6500
+    secrets:
+      - name: token
+        description: Portainer API token
 
   portainer_monitor:
     title: Portainer Monitor
     description: Portainer MCP server
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
+    config:
+      - name: server
+        type: string
+        default: http://192.168.1.60:6500
+    secrets:
+      - name: token
+        description: Portainer API token
 
   portainer_observability1:
     title: Portainer Observability1
     description: Portainer MCP server
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
+    config:
+      - name: server
+        type: string
+        default: http://192.168.1.80:6500
+    secrets:
+      - name: token
+        description: Portainer API token
 
   portainer_tools1:
     title: Portainer Tools1
     description: Portainer MCP server
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
+    config:
+      - name: server
+        type: string
+        default: http://192.168.1.17:6500
+    secrets:
+      - name: token
+        description: Portainer API token
 
   portainer_production1:
     title: Portainer Production1
     description: Portainer MCP server
     type: server
     image: registry:5000/offbeat-iot/portainer-mcp:latest
+    dynamic:
+      tools: true
+    config:
+      - name: server
+        type: string
+        default: http://192.168.1.85:6500
+    secrets:
+      - name: token
+        description: Portainer API token
