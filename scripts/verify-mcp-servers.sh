@@ -127,8 +127,8 @@ check_tools() {
     local missing=()
     echo "$tool_names" | grep -qE '^browser_' || missing+=("playwright")
     echo "$tool_names" | grep -qE '^(add_issue_comment|create_|get_|list_|merge_pull_request|push_files|search_|update_issue|update_pull_request_branch)$' || missing+=("github")
-    echo "$tool_names" | grep -qiE 'jenkins|job|build' || missing+=("jenkins")
-    echo "$tool_names" | grep -qi 'portainer' || missing+=("portainer")
+    echo "$tool_names" | grep -qiE 'jenkins|getBuildLog|searchBuildLog|getJobs|triggerBuild|getStatus' || missing+=("jenkins")
+    echo "$tool_names" | grep -qiE 'portainer|ListEnvironments|ListStacks|GetStackFile|DockerProxy|ListLocalStacks' || missing+=("portainer")
     echo "$tool_names" | grep -qiE 'yahoo|google|gmail|calendar|todoist|tado|router|alert' || missing+=("custom")
 
     if [[ ${#missing[@]} -gt 0 ]]; then

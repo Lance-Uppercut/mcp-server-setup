@@ -272,9 +272,13 @@ PY
                         ${composeCommand} --profile opencode run --rm --entrypoint sh opencode -lc '
                             set -e
                             output=\$(npx -y @modelcontextprotocol/inspector --cli "http://mcp-gateway:3100/sse" --transport sse --method tools/list 2>&1)
-                            echo "\$output" | grep -q "jenkins" || { echo "Missing jenkins tools in opencode container"; exit 1; }
-                            echo "\$output" | grep -q "portainer" || { echo "Missing portainer tools in opencode container"; exit 1; }
-                            echo "PASS | opencode container sees jenkins and portainer tools"
+                            echo "\$output" | grep -q '"name": "getStatus"' || { echo "Missing Jenkins getStatus tool in opencode container"; exit 1; }
+                            echo "\$output" | grep -q '"name": "ListEnvironments"' || { echo "Missing Portainer ListEnvironments tool in opencode container"; exit 1; }
+                            jenkins_status=\$(npx -y @modelcontextprotocol/inspector --cli "http://mcp-gateway:3100/sse" --transport sse --method tools/call --tool-name getStatus 2>&1)
+                            echo "\$jenkins_status" | grep -qi 'error' && { echo "Jenkins getStatus call failed"; echo "\$jenkins_status"; exit 1; }
+                            portainer_list=\$(npx -y @modelcontextprotocol/inspector --cli "http://mcp-gateway:3100/sse" --transport sse --method tools/call --tool-name ListEnvironments 2>&1)
+                            echo "\$portainer_list" | grep -qi 'error' && { echo "Portainer ListEnvironments call failed"; echo "\$portainer_list"; exit 1; }
+                            echo "PASS | opencode container can call Jenkins and Portainer tools"
                         '
                     """
                 }

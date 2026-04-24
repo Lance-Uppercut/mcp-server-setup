@@ -6,7 +6,20 @@ registry:
     ref: ""
     source: ""
     type: remote
-    tools: []
+    tools:
+      - name: getBuildLog
+      - name: searchBuildLog
+      - name: getJobs
+      - name: triggerBuild
+      - name: updateBuild
+      - name: whoAmI
+      - name: getStatus
+      - name: getJob
+      - name: getBuild
+      - name: getJobScm
+      - name: getBuildScm
+      - name: getBuildChangeSets
+      - name: getTestResults
     prompts: 0
     resources: {}
     dynamic:
@@ -24,10 +37,18 @@ registry:
     ref: ""
     source: ""
     type: server
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: 192.168.1.95:5000/offbeat-iot/portainer-mcp:latest
     dynamic:
       tools: true
-    tools: []
+    tools:
+      - name: ListEnvironments
+      - name: ListStacks
+      - name: GetStackFile
+      - name: CreateStack
+      - name: UpdateStack
+      - name: DockerProxy
+      - name: KubernetesProxy
+      - name: ListLocalStacks
     prompts: 0
     resources: {}
     env:
@@ -45,10 +66,18 @@ registry:
     ref: ""
     source: ""
     type: server
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: 192.168.1.95:5000/offbeat-iot/portainer-mcp:latest
     dynamic:
       tools: true
-    tools: []
+    tools:
+      - name: ListEnvironments
+      - name: ListStacks
+      - name: GetStackFile
+      - name: CreateStack
+      - name: UpdateStack
+      - name: DockerProxy
+      - name: KubernetesProxy
+      - name: ListLocalStacks
     prompts: 0
     resources: {}
     env:
@@ -66,10 +95,18 @@ registry:
     ref: ""
     source: ""
     type: server
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: 192.168.1.95:5000/offbeat-iot/portainer-mcp:latest
     dynamic:
       tools: true
-    tools: []
+    tools:
+      - name: ListEnvironments
+      - name: ListStacks
+      - name: GetStackFile
+      - name: CreateStack
+      - name: UpdateStack
+      - name: DockerProxy
+      - name: KubernetesProxy
+      - name: ListLocalStacks
     prompts: 0
     resources: {}
     env:
@@ -87,10 +124,18 @@ registry:
     ref: ""
     source: ""
     type: server
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: 192.168.1.95:5000/offbeat-iot/portainer-mcp:latest
     dynamic:
       tools: true
-    tools: []
+    tools:
+      - name: ListEnvironments
+      - name: ListStacks
+      - name: GetStackFile
+      - name: CreateStack
+      - name: UpdateStack
+      - name: DockerProxy
+      - name: KubernetesProxy
+      - name: ListLocalStacks
     prompts: 0
     resources: {}
     env:
@@ -108,10 +153,18 @@ registry:
     ref: ""
     source: ""
     type: server
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: 192.168.1.95:5000/offbeat-iot/portainer-mcp:latest
     dynamic:
       tools: true
-    tools: []
+    tools:
+      - name: ListEnvironments
+      - name: ListStacks
+      - name: GetStackFile
+      - name: CreateStack
+      - name: UpdateStack
+      - name: DockerProxy
+      - name: KubernetesProxy
+      - name: ListLocalStacks
     prompts: 0
     resources: {}
     env:
@@ -129,10 +182,18 @@ registry:
     ref: ""
     source: ""
     type: server
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: 192.168.1.95:5000/offbeat-iot/portainer-mcp:latest
     dynamic:
       tools: true
-    tools: []
+    tools:
+      - name: ListEnvironments
+      - name: ListStacks
+      - name: GetStackFile
+      - name: CreateStack
+      - name: UpdateStack
+      - name: DockerProxy
+      - name: KubernetesProxy
+      - name: ListLocalStacks
     prompts: 0
     resources: {}
     env:
