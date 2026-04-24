@@ -236,6 +236,8 @@ PY
                             npx -y @modelcontextprotocol/inspector --cli "http://localhost:3100/sse" --transport sse --method tools/call --tool-name mcp-find --tool-arg query=portainer || true
                             echo "Gateway catalog probe for jenkins:" 
                             npx -y @modelcontextprotocol/inspector --cli "http://localhost:3100/sse" --transport sse --method tools/call --tool-name mcp-find --tool-arg query=jenkins || true
+                            echo "Portainer MCP image labels (metadata probe):"
+                            docker image inspect registry:5000/offbeat-iot/portainer-mcp:latest --format '{{json .Config.Labels}}' || true
                             echo "Gateway mounted custom-catalog.yaml (first 140 lines):"
                             docker inspect "\$mcpGatewayContainer" --format '{{json .Mounts}}' || true
                             docker exec "\$mcpGatewayContainer" sh -lc 'ls -la /gateway || true' || true
