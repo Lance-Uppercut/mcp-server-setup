@@ -17,8 +17,7 @@ services:
       - MCP_ENABLE=true
       # Direct SSE connections to MCP servers
       - TOOL_SERVER_CONNECTIONS=[
-          {"url":"http://yahoo-mail-mcp:3101","name":"yahoo-mail","type":"sse"},
-          {"url":"http://alertmanager-mcp:8001","name":"alertmanager","type":"sse"}
+          {"url":"http://host.docker.internal:3105/sse","name":"asus-router","type":"sse"}
         ]
     extra_hosts:
       - "host.docker.internal:host-gateway"
