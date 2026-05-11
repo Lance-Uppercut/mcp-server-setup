@@ -9,6 +9,7 @@
 
 # Data (tokens, local state)
 data/
+runtime-secrets/
 opencode/data/
 opencode/codex/
 
@@ -22,5 +23,3 @@ img.png
 # OS
 .DS_Store
 Thumbs.db
-
-.env
