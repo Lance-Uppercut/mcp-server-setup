@@ -5,6 +5,7 @@ WORKDIR /app
 RUN pip install --no-cache-dir \
     mcp[cli] \
     asusrouter \
+    aiohttp \
     httpx \
     uvicorn \
     starlette \

@@ -33,6 +33,21 @@ docker compose exec opencode bash
 docker compose up -d yahoo-mail-mcp alertmanager-mcp
 ```
 
+## ASUS Router MCP Only
+
+If you only need the ASUS Router MCP server, use the dedicated compose file:
+
+```bash
+# Build and run only ASUS Router MCP
+docker compose -f docker-compose.asus.yml up -d --build
+
+# Verify it's running
+curl http://localhost:3105/sse
+
+# Stop it
+docker compose -f docker-compose.asus.yml down
+```
+
 ## OpenCode CLI
 
 The `opencode` service provides an interactive CLI for using MCP tools.
