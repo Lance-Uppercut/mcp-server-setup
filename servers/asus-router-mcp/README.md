@@ -35,12 +35,27 @@ Configure via environment variables:
 - `get_guest_wifi_status` - Get guest WiFi network status
 
 ### Configuration Tools
-- `set_guest_wifi` - Enable/disable guest WiFi network
-  - Parameters: `enable` (bool), `band` (2.4GHz/5GHz), `guest_number` (1-3)
-- `set_wifi_radio` - Enable/disable WiFi radio band
-  - Parameters: `enable` (bool), `band` (2.4GHz/5GHz)
-- `set_wifi_hidden` - Hide/show WiFi SSID (stop broadcasting)
-  - Parameters: `hidden` (bool), `band` (2.4GHz/5GHz), `ssid_number` (default 1)
+This server currently runs in **read-only mode** for safety and stability.
+
+## Verification
+
+One command (unit + live smoke):
+
+```bash
+./scripts/verify-asus-mcp.sh
+```
+
+Run unit tests (mapping behavior):
+
+```bash
+docker run --rm -v "$PWD/servers/asus-router-mcp:/work" -w /work local/asus-router-mcp:latest python -m unittest tests/test_mapping.py -v
+```
+
+Run live smoke tests (real router calls):
+
+```bash
+docker run --rm --env-file .env -v "$PWD/servers/asus-router-mcp:/work" -w /work local/asus-router-mcp:latest python tests/live_smoke.py
+```
 
 ## Usage
 
