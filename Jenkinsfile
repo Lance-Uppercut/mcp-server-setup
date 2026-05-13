@@ -162,12 +162,13 @@ for filename, payload in parsed.items():
 PY
                         '''
 
-                        def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
+                        def composeCommand = 'docker compose -f docker-compose.yml --env-file ./runtime-secrets/runtime.env'
 
                         sh script: "${composeCommand} down --remove-orphans", returnStatus: true
 
                         timeout(time: 5, unit: 'MINUTES') {
                             sh "${composeCommand} pull"
+                            sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
                             sh "${composeCommand} up -d"
                         }
 
