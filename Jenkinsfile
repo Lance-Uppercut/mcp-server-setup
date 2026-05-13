@@ -162,7 +162,7 @@ for filename, payload in parsed.items():
 PY
                         '''
 
-                        def composeCommand = 'docker compose --env-file ./runtime-secrets/runtime.env'
+                        def composeCommand = 'docker compose -f docker-compose.yml --env-file ./runtime-secrets/runtime.env'
 
                         sh script: "${composeCommand} down --remove-orphans", returnStatus: true
 
