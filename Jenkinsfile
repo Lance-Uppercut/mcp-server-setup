@@ -168,6 +168,7 @@ PY
 
                         timeout(time: 5, unit: 'MINUTES') {
                             sh "${composeCommand} pull"
+                            sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
                             sh "${composeCommand} up -d"
                         }
 
