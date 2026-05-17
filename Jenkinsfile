@@ -41,7 +41,6 @@ pipeline {
                     
                     def services = [
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
-                        [imageName: 'yahoo-mail-mcp-server', context: './servers/yahoo-mail-mcp-server'],
                         [imageName: 'tado-mcp', context: './servers/tado-mcp'],
                         [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
                         [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp']

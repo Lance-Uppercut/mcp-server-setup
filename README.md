@@ -7,7 +7,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | Service               | MCP Server                      | Port | Transport   | URL                                          |
 |-----------------------|---------------------------------|------|-------------|----------------------------------------------|
 | OpenCode CLI          | MCP Client                      | -    | Interactive | `docker compose exec opencode bash`          |
-| Yahoo Mail            | Custom Node.js MCP (local)      | 3101 | SSE         | http://localhost:3101/mcp/sse                |
+| Yahoo Mail            | yunfeizhu/mcp-mail-server (npx) | -    | stdio       | OpenCode local tool                           |
 | Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
 | Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
 | Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
@@ -30,7 +30,7 @@ docker compose up -d
 docker compose exec opencode bash
 
 # Or start specific servers
-docker compose up -d yahoo-mail-mcp alertmanager-mcp
+docker compose up -d alertmanager-mcp
 ```
 
 ## ASUS Router MCP Only
@@ -72,8 +72,8 @@ MCP servers are pre-configured in `opencode/config/opencode.json`:
   "$schema": "https://opencode.ai/config.json",
   "mcp": {
     "yahoo-mail": {
-      "type": "remote",
-      "url": "http://yahoo-mail-mcp:3101/mcp/sse",
+      "type": "local",
+      "command": ["npx", "-y", "mcp-mail-server"],
       "enabled": true
     },
     "alertmanager": {
@@ -114,7 +114,6 @@ docker compose exec opencode opencode
 
 ### Direct SSE Servers
 ```
-http://localhost:3101/mcp/sse   # Yahoo Mail
 http://localhost:8001/sse       # Alertmanager
 http://localhost:3102/sse       # Tado
 http://localhost:3103/sse       # Google Workspace
@@ -125,7 +124,6 @@ http://localhost:3106/sse       # Playwright
 
 ### Deployed on build1
 ```
-http://build1:3101/mcp/sse      # Yahoo Mail
 http://build1:8001/sse          # Alertmanager
 http://build1:3102/sse          # Tado
 http://build1:3103/sse          # Google Workspace
@@ -249,7 +247,6 @@ services:
     environment:
       - MCP_ENABLE=true
       - TOOL_SERVER_CONNECTIONS=[
-          {"url":"http://host.docker.internal:3101/mcp/sse","name":"yahoo-mail","type":"sse"},
           {"url":"http://host.docker.internal:8001/sse","name":"alertmanager","type":"sse"},
           {"url":"http://host.docker.internal:3102/sse","name":"tado","type":"sse"},
           {"url":"http://host.docker.internal:3103/sse","name":"google-workspace","type":"sse"},

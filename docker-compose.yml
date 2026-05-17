@@ -33,20 +33,6 @@ services:
     networks:
       - mcp-network
 
-  # Yahoo Mail MCP Server (SSE mode)
-  yahoo-mail-mcp:
-    image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
-    container_name: yahoo-mail-mcp
-    environment:
-      - YAHOO_EMAIL=${YAHOO_EMAIL}
-      - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD}
-      - TRANSPORT_MODE=sse
-      - PORT=3101
-    ports:
-      - "3101:3101"
-    networks:
-      - mcp-network
-
   # Alertmanager MCP Server (SSE mode)
   alertmanager-mcp:
     image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
