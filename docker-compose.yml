@@ -40,7 +40,7 @@ services:
     command:
       - sh
       - -c
-      - npx -y @agentdesk/supergateway --stdio 'npx -y mcp-mail-server' --port 3101 --ssePath /mcp/sse --messagePath /mcp/messages
+      - npx -y supergateway --stdio 'npx -y mcp-mail-server' --port 3101 --ssePath /mcp/sse --messagePath /mcp/messages
     environment:
       - IMAP_HOST=imap.mail.yahoo.com
       - IMAP_PORT=993
