@@ -8,17 +8,9 @@ An MCP server is considered **working** when it meets all of the following crite
 
 The server must compile/build without errors.
 
-### Node.js (Yahoo Mail, Jenkins)
+### Docker (Yahoo Mail via supergateway + mcp-mail-server)
 ```bash
-# Yahoo Mail
-cd servers/yahoo-mail-mcp-server
-npm install
-npm run build
-
-# Jenkins
-cd servers/jenkins-mcp
-npm install
-npm run build
+docker compose up -d yahoo-mail-mcp
 ```
 
 ### Java (Tado)
@@ -46,10 +38,10 @@ npm install -g @anthropic-ai/mcp-inspector
 npx @anthropic-ai/mcp-inspector
 ```
 
-### Yahoo Mail (SSE Transport)
+### Yahoo Mail (SSE Transport via mcp-mail-server)
 
 ```bash
-# Start the server in SSE mode
+# Start the server in SSE mode (uses supergateway to wrap mcp-mail-server)
 docker compose up -d yahoo-mail-mcp
 
 # Verify with curl (basic connectivity)
@@ -61,23 +53,26 @@ npx @anthropic-ai/mcp-inspector \
   --url http://localhost:3101/mcp/sse
 
 # Inside inspector, test tools:
-# - tools/list → should return 11 tools (list_emails, read_email, search_emails, etc.)
-# - tools/call with name="list_folders" → should return folder list
-# - tools/call with name="list_emails" and arguments={"count": 3} → should return emails
+# - tools/list → should return tools (connect_all, get_unseen_messages, send_email, etc.)
+# - tools/call with name="list_mailboxes" → should return folder list
 ```
 
 **Expected Tools:**
-- `list_emails` - List recent emails
-- `read_email` - Read email content by UID
-- `search_emails` - Search with filters
-- `delete_emails` - Move to trash
-- `archive_emails` - Archive messages
-- `mark_as_read` - Mark as read
-- `mark_as_unread` - Mark as unread
-- `flag_emails` - Flag/star
-- `unflag_emails` - Remove flag
-- `move_emails` - Move to folder
-- `list_folders` - List all folders
+- `connect_all` - Connect to IMAP and SMTP
+- `get_unseen_messages` - Get unread emails
+- `get_recent_messages` - Get recent emails
+- `search_by_sender` - Search by sender
+- `search_by_subject` - Search by subject
+- `search_by_recipient` - Search by recipient
+- `search_by_body` - Search message body
+- `search_all_messages` - Search all messages
+- `get_message` - Read email by UID
+- `send_email` - Send email via SMTP
+- `reply_to_email` - Reply to email
+- `list_mailboxes` - List all folders
+- `delete_message` - Delete email
+- `get_attachments` - Get attachment metadata
+- `save_attachment` - Download attachment
 
 ### Tado (SSE Transport)
 
@@ -236,6 +231,8 @@ opencode mcp list
 # - yahoo-mail: connected
 # - alertmanager: connected
 # - tado: connected
+# - alertmanager: connected
+# - tado: connected
 
 # Start interactive session and query tools
 opencode
@@ -271,6 +268,7 @@ docker compose exec opencode opencode --tools "yahoo-mail" --prompt "list_emails
 ### Yahoo Mail
 - Requires `YAHOO_EMAIL` and `YAHOO_APP_PASSWORD` environment variables
 - Test credentials must have access to actual email account
+- Uses `yunfeizhu/mcp-mail-server` via `supergateway` SSE wrapper
 - SSE endpoint: `http://localhost:3101/mcp/sse`
 
 ### Tado

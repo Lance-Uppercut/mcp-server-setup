@@ -20,18 +20,8 @@
       "enabled": false
     },
     "yahoo-mail": {
-      "type": "local",
-      "command": ["npx", "-y", "mcp-mail-server"],
-      "environment": {
-        "IMAP_HOST": "imap.mail.yahoo.com",
-        "IMAP_PORT": "993",
-        "IMAP_SECURE": "true",
-        "SMTP_HOST": "smtp.mail.yahoo.com",
-        "SMTP_PORT": "465",
-        "SMTP_SECURE": "true",
-        "EMAIL_USER": "${YAHOO_EMAIL}",
-        "EMAIL_PASS": "${YAHOO_APP_PASSWORD}"
-      },
+      "type": "remote",
+      "url": "http://yahoo-mail-mcp:3101/mcp/sse",
       "enabled": false
     },
     "tado": {

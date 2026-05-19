@@ -100,6 +100,7 @@ echo "=== MCP verify start host=$HOST ==="
 if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
   if [[ "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
     if command -v docker >/dev/null 2>&1; then
+      check_container "yahoo" '^yahoo-mail-mcp\|'
       check_container "alertmanager" '^alertmanager-mcp\|'
       check_container "tado" '^tado-mcp\|'
       check_container "google" 'google-workspace-mcp.*\|'
@@ -114,6 +115,7 @@ if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
   fi
 fi
 
+check_endpoint "yahoo" "http://${HOST}:3101/mcp/sse"
 check_endpoint "alertmanager" "http://${HOST}:8001/sse"
 check_endpoint "tado" "http://${HOST}:3102/sse"
 check_endpoint "google" "http://${HOST}:3103/sse"
@@ -121,6 +123,7 @@ check_endpoint "todoist" "http://${HOST}:3104/sse"
 check_endpoint "asus-router" "http://${HOST}:3105/sse"
 check_endpoint "playwright" "http://${HOST}:3106/sse"
 
+check_tools "yahoo" "http://${HOST}:3101/mcp/sse"
 check_tools "alertmanager" "http://${HOST}:8001/sse"
 check_tools "tado" "http://${HOST}:3102/sse"
 check_tools "google" "http://${HOST}:3103/sse"
