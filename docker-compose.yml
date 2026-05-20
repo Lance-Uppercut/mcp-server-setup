@@ -33,15 +33,22 @@ services:
     networks:
       - mcp-network
 
-  # Yahoo Mail MCP Server (SSE mode)
+  # Yahoo Mail MCP Server (SSE via custom wrapper around mcp-mail-server)
   yahoo-mail-mcp:
-    image: registry:5000/offbeat-iot/yahoo-mail-mcp-server:latest
+    image: registry:5000/offbeat-iot/yahoo-mail-mcp:latest
+    build:
+      context: ./servers/yahoo-mail-sse
+      dockerfile: Dockerfile
     container_name: yahoo-mail-mcp
     environment:
-      - YAHOO_EMAIL=${YAHOO_EMAIL}
-      - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD}
-      - TRANSPORT_MODE=sse
-      - PORT=3101
+      - IMAP_HOST=imap.mail.yahoo.com
+      - IMAP_PORT=993
+      - IMAP_SECURE=true
+      - SMTP_HOST=smtp.mail.yahoo.com
+      - SMTP_PORT=465
+      - SMTP_SECURE=true
+      - EMAIL_USER=${YAHOO_EMAIL}
+      - EMAIL_PASS=${YAHOO_APP_PASSWORD}
     ports:
       - "3101:3101"
     networks:
