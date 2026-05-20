@@ -8,8 +8,9 @@ An MCP server is considered **working** when it meets all of the following crite
 
 The server must compile/build without errors.
 
-### Docker (Yahoo Mail via supergateway + mcp-mail-server)
+### Docker (Yahoo Mail via custom wrapper around mcp-mail-server)
 ```bash
+docker compose build yahoo-mail-mcp
 docker compose up -d yahoo-mail-mcp
 ```
 
@@ -38,19 +39,21 @@ npm install -g @anthropic-ai/mcp-inspector
 npx @anthropic-ai/mcp-inspector
 ```
 
-### Yahoo Mail (SSE Transport via mcp-mail-server)
+### Yahoo Mail (SSE via custom wrapper around mcp-mail-server)
 
 ```bash
-# Start the server in SSE mode (uses supergateway to wrap mcp-mail-server)
+# Build and start the server
+docker compose build yahoo-mail-mcp
 docker compose up -d yahoo-mail-mcp
 
 # Verify with curl (basic connectivity)
 curl -s http://localhost:3101/mcp/sse | head -c 500
 
 # Verify with MCP Inspector
-npx @anthropic-ai/mcp-inspector \
+npx @modelcontextprotocol/inspector \
+  --cli http://localhost:3101/mcp/sse \
   --transport sse \
-  --url http://localhost:3101/mcp/sse
+  --method tools/list
 
 # Inside inspector, test tools:
 # - tools/list → should return tools (connect_all, get_unseen_messages, send_email, etc.)
@@ -268,7 +271,7 @@ docker compose exec opencode opencode --tools "yahoo-mail" --prompt "list_emails
 ### Yahoo Mail
 - Requires `YAHOO_EMAIL` and `YAHOO_APP_PASSWORD` environment variables
 - Test credentials must have access to actual email account
-- Uses `yunfeizhu/mcp-mail-server` via `supergateway` SSE wrapper
+- Uses `yunfeizhu/mcp-mail-server` via custom Node.js SSE wrapper (<code>servers/yahoo-mail-sse/server.js</code>)
 - SSE endpoint: `http://localhost:3101/mcp/sse`
 
 ### Tado

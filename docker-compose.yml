@@ -33,14 +33,13 @@ services:
     networks:
       - mcp-network
 
-  # Yahoo Mail MCP Server (SSE via supergateway wrapping mcp-mail-server)
+  # Yahoo Mail MCP Server (SSE via custom wrapper around mcp-mail-server)
   yahoo-mail-mcp:
-    image: node:20-alpine
+    image: registry:5000/offbeat-iot/yahoo-mail-mcp:latest
+    build:
+      context: ./servers/yahoo-mail-sse
+      dockerfile: Dockerfile
     container_name: yahoo-mail-mcp
-    command:
-      - sh
-      - -c
-      - npx -y supergateway --stdio 'npx -y mcp-mail-server' --port 3101 --ssePath /mcp/sse --messagePath /mcp/messages
     environment:
       - IMAP_HOST=imap.mail.yahoo.com
       - IMAP_PORT=993

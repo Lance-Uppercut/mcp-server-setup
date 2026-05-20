@@ -7,7 +7,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | Service               | MCP Server                      | Port | Transport   | URL                                          |
 |-----------------------|---------------------------------|------|-------------|----------------------------------------------|
 | OpenCode CLI          | MCP Client                      | -    | Interactive | `docker compose exec opencode bash`          |
-| Yahoo Mail            | yunfeizhu/mcp-mail-server (SSE) | 3101 | SSE         | http://localhost:3101/mcp/sse                |
+| Yahoo Mail            | Custom Node.js SSE wrapper → yunfeizhu/mcp-mail-server | 3101 | SSE         | http://localhost:3101/mcp/sse                |
 | Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
 | Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
 | Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
@@ -303,7 +303,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 Test any MCP server directly:
 
 ```bash
-# Yahoo Mail (SSE via mcp-mail-server)
+# Yahoo Mail (SSE via custom wrapper around mcp-mail-server)
 curl http://localhost:3101/mcp/sse
 
 # Alertmanager (SSE)
