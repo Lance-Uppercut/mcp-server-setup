@@ -105,6 +105,8 @@ pipeline {
                         string(credentialsId: spec.credentialId, variable: spec.variable)
                     } + runtimeFileSpecs.collect { spec ->
                         file(credentialsId: spec.credentialId, variable: spec.variable)
+                    } + [
+                        usernamePassword(credentialsId: 'github', usernameVariable: 'GITHUB_REGISTRY_USER', passwordVariable: 'GITHUB_REGISTRY_TOKEN')
                     }
 
                     withCredentials(credentialBindings) {
@@ -163,6 +165,10 @@ PY
                         '''
 
                         def composeCommand = 'docker compose -f docker-compose.yml --env-file ./runtime-secrets/runtime.env'
+
+                        sh '''
+                            echo "$GITHUB_REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_REGISTRY_USER" --password-stdin
+                        '''
 
                         sh script: "${composeCommand} down --remove-orphans", returnStatus: true
 
