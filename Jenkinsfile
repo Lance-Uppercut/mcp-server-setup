@@ -107,7 +107,7 @@ pipeline {
                         file(credentialsId: spec.credentialId, variable: spec.variable)
                     } + [
                         usernamePassword(credentialsId: 'github', usernameVariable: 'GITHUB_REGISTRY_USER', passwordVariable: 'GITHUB_REGISTRY_TOKEN')
-                    }
+                    ]
 
                     withCredentials(credentialBindings) {
                         sh '''
