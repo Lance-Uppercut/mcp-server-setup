@@ -2,16 +2,17 @@
 import os
 import json
 import asyncio
-import aiohttp
+import httpx
+from pathlib import Path
 from mcp.server import Server
 from mcp.types import Tool
 from mcp.server.stdio import stdio_server
-from mcp.server.sse import SseServerTransport
+from mcp.server.sse import SseServerTransport, MemoryObjectReceiveStream, MemoryObjectSendStream
 
 server = Server("asus-router-mcp")
 
 TRANSPORT_MODE = os.environ.get("TRANSPORT_MODE", "stdio").lower()
-PORT = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "3105")))
+PORT = int(os.environ.get("PORT", "3105"))
 
 ROUTER_HOST = os.environ.get("ROUTER_HOST", "192.168.1.1")
 ROUTER_USERNAME = os.environ.get("ROUTER_USERNAME", "admin")
@@ -25,72 +26,17 @@ except ImportError:
     ASUSROUTER_AVAILABLE = False
     print("Warning: asusrouter library not installed", file=__import__('sys').stderr)
 
+try:
+    from asusrouter.modules.wlan import AsusWLAN
+    ASUSROUTER_WLAN_CONTROL_AVAILABLE = True
+except ImportError:
+    ASUSROUTER_WLAN_CONTROL_AVAILABLE = False
+
 router_instance = None
 router_connected = False
-router_session = None
-ASUS_DATA_NAMES = set()
-
-
-def _available_data_names():
-    if not ASUSROUTER_AVAILABLE:
-        return set()
-    return {item.name for item in AsusData}
-
-
-def _pick_data_name(*candidates):
-    for name in candidates:
-        if name in ASUS_DATA_NAMES:
-            return name
-    return None
-
-
-async def _safe_get_data(router, *candidates):
-    picked = _pick_data_name(*candidates)
-    if not picked:
-        raise RuntimeError(
-            f"No compatible AsusData category found. Tried={list(candidates)} available={sorted(ASUS_DATA_NAMES)}"
-        )
-
-    data_enum = getattr(AsusData, picked)
-    return picked, await router.async_get_data(data_enum)
-
-
-def _is_wifi_client(device):
-    if not isinstance(device, dict):
-        return False
-    text = json.dumps(device, default=str).lower()
-    wifi_markers = ["2g", "2.4", "5g", "6g", "wlan", "wireless", "rssi", "radio"]
-    return any(marker in text for marker in wifi_markers)
-
-
-async def _compose_router_info(router):
-    result = {}
-
-    try:
-        source, firmware = await _safe_get_data(router, "FIRMWARE")
-        result["firmware"] = {"source": source, "data": firmware}
-    except Exception as e:
-        result["firmware_error"] = str(e)
-
-    try:
-        source, system = await _safe_get_data(router, "SYSTEM", "SYSINFO")
-        result["system"] = {"source": source, "data": system}
-    except Exception as e:
-        result["system_error"] = str(e)
-
-    try:
-        source, boottime = await _safe_get_data(router, "BOOTTIME")
-        result["boottime"] = {"source": source, "data": boottime}
-    except Exception as e:
-        result["boottime_error"] = str(e)
-
-    if not any(key in result for key in ["firmware", "system", "boottime"]):
-        raise RuntimeError(f"No router info categories available. available={sorted(ASUS_DATA_NAMES)}")
-
-    return result
 
 async def get_router():
-    global router_instance, router_connected, router_session, ASUS_DATA_NAMES
+    global router_instance, router_connected
     
     if router_instance and router_connected:
         try:
@@ -103,36 +49,17 @@ async def get_router():
     if not ASUSROUTER_AVAILABLE:
         raise RuntimeError("asusrouter library not available")
     
-    if router_session is None or router_session.closed:
-        router_session = aiohttp.ClientSession()
-    
     router_instance = AsusRouter(
         hostname=ROUTER_HOST,
         username=ROUTER_USERNAME,
         password=ROUTER_PASSWORD,
         use_ssl=USE_SSL,
-        session=router_session,
     )
     
     await router_instance.async_connect()
     router_connected = True
-    ASUS_DATA_NAMES = _available_data_names()
     print(f"Connected to ASUS router at {ROUTER_HOST}", file=__import__('sys').stderr)
-    print(f"Available AsusData categories: {sorted(ASUS_DATA_NAMES)}", file=__import__('sys').stderr)
     return router_instance
-
-
-async def close_router_session():
-    global router_session, router_connected
-    try:
-        if router_instance is not None:
-            await router_instance.async_disconnect()
-    except Exception:
-        pass
-
-    if router_session is not None and not router_session.closed:
-        await router_session.close()
-    router_connected = False
 
 @server.list_tools()
 async def list_tools():
@@ -172,6 +99,44 @@ async def list_tools():
             description="Get guest WiFi network status",
             inputSchema={"type": "object", "properties": {}}
         ),
+        Tool(
+            name="set_guest_wifi",
+            description="Enable or disable a guest WiFi network",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enable": {"type": "boolean", "description": "True to enable, False to disable"},
+                    "band": {"type": "string", "description": "Band: '2.4GHz' or '5GHz'"},
+                    "guest_number": {"type": "integer", "description": "Guest network number (1-3)", "default": 1}
+                },
+                "required": ["enable"]
+            }
+        ),
+        Tool(
+            name="set_wifi_radio",
+            description="Enable or disable a WiFi radio band",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "enable": {"type": "boolean", "description": "True to enable, False to disable"},
+                    "band": {"type": "string", "description": "Band: '2.4GHz' or '5GHz'"}
+                },
+                "required": ["enable", "band"]
+            }
+        ),
+        Tool(
+            name="set_wifi_hidden",
+            description="Hide (disable SSID broadcast) or show a WiFi network",
+            inputSchema={
+                "type": "object",
+                "properties": {
+                    "hidden": {"type": "boolean", "description": "True to hide SSID (not broadcast), False to show"},
+                    "band": {"type": "string", "description": "Band: '2.4GHz' or '5GHz'"},
+                    "ssid_number": {"type": "integer", "description": "SSID number (typically 1 for main)", "default": 1}
+                },
+                "required": ["hidden"]
+            }
+        ),
     ]
 
 @server.call_tool()
@@ -179,35 +144,66 @@ async def call_tool(name: str, arguments: dict):
     try:
         if not ASUSROUTER_AVAILABLE:
             return {"isError": True, "content": [{"type": "text", "text": "asusrouter library not installed"}]}
-
+        
         router = await get_router()
         
         if name == "get_devices":
-            source, data = await _safe_get_data(router, "CLIENTS", "DEVICEMAP")
-            result = {"source": source, "data": data}
+            data = await router.async_get_data(AsusData.DEVICES)
+            result = data
         elif name == "get_wifi_clients":
-            source, data = await _safe_get_data(router, "CLIENTS")
-            if isinstance(data, dict):
-                wifi_clients = {k: v for k, v in data.items() if _is_wifi_client(v)}
-            elif isinstance(data, list):
-                wifi_clients = [item for item in data if _is_wifi_client(item)]
-            else:
-                wifi_clients = data
-            result = {"source": source, "data": wifi_clients, "note": "WiFi clients derived from CLIENTS dataset"}
+            data = await router.async_get_data(AsusData.WIFI_CLIENTS)
+            result = data
         elif name == "get_wan_status":
-            source, data = await _safe_get_data(router, "WAN")
-            result = {"source": source, "data": data}
+            data = await router.async_get_data(AsusData.WAN)
+            result = data
         elif name == "get_router_info":
-            result = await _compose_router_info(router)
+            data = await router.async_get_data(AsusData.ROUTER)
+            result = data
         elif name == "get_network_stats":
-            source, data = await _safe_get_data(router, "NETWORK")
-            result = {"source": source, "data": data}
+            data = await router.async_get_data(AsusData.NETWORK)
+            result = data
         elif name == "get_wlan_status":
-            source, data = await _safe_get_data(router, "WLAN")
-            result = {"source": source, "data": data}
+            data = await router.async_get_data(AsusData.WLAN)
+            result = data
         elif name == "get_guest_wifi_status":
-            source, data = await _safe_get_data(router, "GWLAN")
-            result = {"source": source, "data": data}
+            data = await router.async_get_data(AsusData.GWLAN)
+            result = data
+        elif name == "set_guest_wifi":
+            if not ASUSROUTER_WLAN_CONTROL_AVAILABLE:
+                return {"isError": True, "content": [{"type": "text", "text": "WiFi state controls are unavailable with current asusrouter package"}]}
+            
+            enable = arguments.get("enable")
+            band = arguments.get("band", "2.4GHz")
+            guest_number = arguments.get("guest_number", 1)
+            
+            radio_index = "0" if band == "2.4GHz" else "1"
+            api_id = f"{radio_index}.{guest_number}"
+            
+            state = AsusWLAN.ON if enable else AsusWLAN.OFF
+            result = await router.async_set_state(
+                state,
+                arguments={"api_type": "gwlan", "api_id": api_id}
+            )
+            result = {"success": result, "message": f"Guest WiFi {'enabled' if enable else 'disabled'}"}
+        elif name == "set_wifi_radio":
+            if not ASUSROUTER_WLAN_CONTROL_AVAILABLE:
+                return {"isError": True, "content": [{"type": "text", "text": "WiFi state controls are unavailable with current asusrouter package"}]}
+            
+            enable = arguments.get("enable")
+            band = arguments.get("band", "2.4GHz")
+            
+            state = AsusWLAN.ON if enable else AsusWLAN.OFF
+            
+            result = await router.async_set_state(
+                state,
+                arguments={"api_type": "wlan", "api_id": "0" if band == "2.4GHz" else "1"}
+            )
+            result = {"success": result, "message": f"WiFi radio {band} {'enabled' if enable else 'disabled'}"}
+        elif name == "set_wifi_hidden":
+            return {
+                "isError": True,
+                "content": [{"type": "text", "text": "set_wifi_hidden is not supported by the current asusrouter package version"}]
+            }
         else:
             return {"isError": True, "content": [{"type": "text", "text": f"Unknown tool: {name}"}]}
         

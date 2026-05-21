@@ -6,10 +6,13 @@ import org.springframework.context.annotation.Bean;
 import org.springframework.scheduling.annotation.EnableScheduling;
 import org.springframework.scheduling.annotation.Scheduled;
 import org.springframework.web.reactive.function.client.WebClient;
+import org.springframework.web.reactive.function.BodyInserters;
 import org.springframework.ai.tool.annotation.Tool;
 import org.springframework.ai.tool.annotation.ToolParam;
 import org.springframework.ai.tool.method.MethodToolCallbackProvider;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.util.LinkedMultiValueMap;
+import org.springframework.util.MultiValueMap;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import com.fasterxml.jackson.databind.ObjectMapper;
@@ -75,16 +78,21 @@ class TadoService {
             return accessToken;
         }
 
+        if (accessToken != null && tokenExpiresAt == 0L && (refreshToken == null || refreshToken.isBlank())) {
+            return accessToken;
+        }
+
         refreshAccessToken();
 
         if (accessToken != null && System.currentTimeMillis() < tokenExpiresAt - TOKEN_SAFETY_MARGIN_MS) {
             return accessToken;
         }
 
-        if (accessToken == null || accessToken.isEmpty()) {
-            throw new RuntimeException("No valid tokens. Please re-authenticate with Tado.");
+        if (accessToken != null && tokenExpiresAt == 0L && (refreshToken == null || refreshToken.isBlank())) {
+            return accessToken;
         }
-        return accessToken;
+
+        throw new RuntimeException("No valid Tado access token. Refresh failed or credentials are expired.");
     }
 
     @Scheduled(
@@ -110,12 +118,15 @@ class TadoService {
             return;
         }
         try {
+            MultiValueMap<String, String> formData = new LinkedMultiValueMap<>();
+            formData.add("client_id", TadoMcpApplication.CLIENT_ID);
+            formData.add("grant_type", "refresh_token");
+            formData.add("refresh_token", refreshToken);
+
             Map<String, Object> response = webClient.post()
                     .uri("https://login.tado.com/oauth2/token")
                     .contentType(org.springframework.http.MediaType.APPLICATION_FORM_URLENCODED)
-                    .bodyValue("client_id=" + TadoMcpApplication.CLIENT_ID +
-                            "&grant_type=refresh_token" +
-                            "&refresh_token=" + refreshToken)
+                    .body(BodyInserters.fromFormData(formData))
                     .retrieve()
                     .bodyToMono(Map.class)
                     .block();
@@ -129,6 +140,8 @@ class TadoService {
                 this.tokenExpiresAt = System.currentTimeMillis() + (expiresIn.longValue() * 1000L);
                 persistTokens();
                 logger.info("Tado token refreshed; expires in {} seconds", expiresIn.longValue());
+            } else {
+                logger.warn("Token refresh response did not contain access_token");
             }
         } catch (Exception e) {
             logger.warn("Token refresh failed: {}", e.getMessage());
@@ -142,7 +155,8 @@ class TadoService {
                 Map<String, String> tokens = objectMapper.readValue(raw, new TypeReference<>() {});
                 this.accessToken = tokens.get("access_token");
                 this.refreshToken = tokens.get("refresh_token");
-                this.tokenExpiresAt = 0L;
+                String expiresAtRaw = tokens.get("expires_at");
+                this.tokenExpiresAt = expiresAtRaw != null ? Long.parseLong(expiresAtRaw) : 0L;
                 logger.info("Loaded Tado tokens from {}", tokensFile);
                 return;
             }
@@ -160,6 +174,7 @@ class TadoService {
             Map<String, String> tokens = new HashMap<>();
             tokens.put("access_token", accessToken);
             tokens.put("refresh_token", refreshToken);
+            tokens.put("expires_at", String.valueOf(tokenExpiresAt));
             Files.writeString(tokensFile, objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(tokens), StandardCharsets.UTF_8);
         } catch (Exception e) {
             logger.warn("Failed to persist Tado tokens to {}: {}", tokensFile, e.getMessage());

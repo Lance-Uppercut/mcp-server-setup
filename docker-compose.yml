@@ -183,7 +183,7 @@ services:
 
   # Portainer MCP Servers (stdio transport - use docker compose run --rm portainer-{server})
   portainer-build1:
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: ghcr.io/portainer/portainer-mcp:latest
     container_name: portainer-build1
     environment:
       - PORTAINER_SERVER=http://build1.home:6500
@@ -196,7 +196,7 @@ services:
       - mcp-network
 
   portainer-build2:
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: ghcr.io/portainer/portainer-mcp:latest
     container_name: portainer-build2
     environment:
       - PORTAINER_SERVER=http://build2.home:6500
@@ -209,7 +209,7 @@ services:
       - mcp-network
 
   portainer-monitor:
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: ghcr.io/portainer/portainer-mcp:latest
     container_name: portainer-monitor
     environment:
       - PORTAINER_SERVER=http://192.168.1.60:6500
@@ -220,7 +220,7 @@ services:
       - mcp-network
 
   portainer-observability1:
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: ghcr.io/portainer/portainer-mcp:latest
     container_name: portainer-observability1
     environment:
       - PORTAINER_SERVER=http://192.168.1.80:6500
@@ -231,7 +231,7 @@ services:
       - mcp-network
 
   portainer-tools1:
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: ghcr.io/portainer/portainer-mcp:latest
     container_name: portainer-tools1
     environment:
       - PORTAINER_SERVER=http://192.168.1.17:6500
@@ -242,7 +242,7 @@ services:
       - mcp-network
 
   portainer-production1:
-    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    image: ghcr.io/portainer/portainer-mcp:latest
     container_name: portainer-production1
     environment:
       - PORTAINER_SERVER=http://192.168.1.85:6500
