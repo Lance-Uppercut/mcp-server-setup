@@ -14,6 +14,10 @@ services:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN:-}
       - YAHOO_EMAIL=${YAHOO_EMAIL:-}
       - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD:-}
+      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-}
+      - SIGNAL_ACCOUNT=${SIGNAL_ACCOUNT:-}
+      - SIGNAL_USERNAME=${SIGNAL_USERNAME:-}
+      - SIGNAL_PASSWORD=${SIGNAL_PASSWORD:-}
     build:
       context: ./opencode
       dockerfile: Dockerfile
@@ -119,6 +123,23 @@ services:
       - "3102:3102"
     volumes:
       - ${MCP_DATA_DIR:-./data}/tado:/data
+    networks:
+      - mcp-network
+
+  # Signal MCP Server (SSE mode)
+  signal-mcp:
+    image: ghcr.io/offbeat-iot/signal-mcp-server:latest
+    container_name: signal-mcp
+    environment:
+      - MCP_TRANSPORT=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3107
+      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL}
+      - SIGNAL_ACCOUNT=${SIGNAL_ACCOUNT}
+      - SIGNAL_USERNAME=${SIGNAL_USERNAME}
+      - SIGNAL_PASSWORD=${SIGNAL_PASSWORD}
+    ports:
+      - "3107:3107"
     networks:
       - mcp-network
 

@@ -10,6 +10,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | Yahoo Mail            | Custom Node.js SSE wrapper → yunfeizhu/mcp-mail-server | 3101 | SSE         | http://localhost:3101/mcp/sse                |
 | Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
 | Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
+| Signal                | Signal MCP bridge               | 3107 | SSE         | http://localhost:3107/sse                    |
 | Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
 | Todoist               | koki-develop/todoist-mcp-server | 3104 | SSE         | http://localhost:3104/sse                    |
 | ASUS Router           | Custom Node.js MCP (local)      | 3105 | SSE         | http://localhost:3105/sse                    |
@@ -117,6 +118,7 @@ docker compose exec opencode opencode
 http://localhost:3101/mcp/sse   # Yahoo Mail
 http://localhost:8001/sse       # Alertmanager
 http://localhost:3102/sse       # Tado
+http://localhost:3107/sse       # Signal
 http://localhost:3103/sse       # Google Workspace
 http://localhost:3104/sse       # Todoist
 http://localhost:3105/sse       # ASUS Router
@@ -128,6 +130,7 @@ http://localhost:3106/sse       # Playwright
 http://build1:3101/mcp/sse      # Yahoo Mail
 http://build1:8001/sse          # Alertmanager
 http://build1:3102/sse          # Tado
+http://build1:3107/sse          # Signal
 http://build1:3103/sse          # Google Workspace
 http://build1:3104/sse          # Todoist
 http://build1:3105/sse          # ASUS Router
@@ -210,6 +213,10 @@ Create these Jenkins credentials before running the pipeline:
 - Secret text: `mcp-todoist-api-token`
 - Secret text: `mcp-yahoo-email`
 - Secret text: `mcp-yahoo-app-password`
+- Secret text: `mcp-signal-base-url`
+- Secret text: `mcp-signal-account`
+- Secret text: `mcp-signal-username`
+- Secret text: `mcp-signal-password`
 - Secret text: `mcp-alertmanager-url`
 - Secret text: `mcp-router-password`
 - Secret text: `mcp-portainer-build1-token`
