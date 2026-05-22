@@ -85,7 +85,6 @@ pipeline {
                         [envName: 'TODOIST_API_TOKEN', credentialId: 'mcp-todoist-api-token', variable: 'SECRET_TODOIST_API_TOKEN'],
                         [envName: 'YAHOO_EMAIL', credentialId: 'mcp-yahoo-email', variable: 'SECRET_YAHOO_EMAIL'],
                         [envName: 'YAHOO_APP_PASSWORD', credentialId: 'mcp-yahoo-app-password', variable: 'SECRET_YAHOO_APP_PASSWORD'],
-                        [envName: 'SIGNAL_BASE_URL', credentialId: 'mcp-signal-base-url', variable: 'SECRET_SIGNAL_BASE_URL'],
                         [envName: 'SIGNAL_ACCOUNT', credentialId: 'mcp-signal-account', variable: 'SECRET_SIGNAL_ACCOUNT'],
                         [envName: 'SIGNAL_USERNAME', credentialId: 'mcp-signal-username', variable: 'SECRET_SIGNAL_USERNAME'],
                         [envName: 'SIGNAL_PASSWORD', credentialId: 'mcp-signal-password', variable: 'SECRET_SIGNAL_PASSWORD'],
@@ -123,6 +122,7 @@ pipeline {
                         def runtimeEnvContent = runtimeEnvSpecs.collect { spec ->
                             "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
                         }
+                        runtimeEnvContent += "SIGNAL_BASE_URL=${quoteEnvValue('http://signal-proxy:8080')}"
                         runtimeEnvContent += "MCP_DATA_DIR=${quoteEnvValue(mcpDataDir)}"
                         runtimeEnvContent += "COMPOSE_PROJECT_NAME=${quoteEnvValue('mcp-servers')}"
                         runtimeEnvContent = runtimeEnvContent.join('\n') + '\n'

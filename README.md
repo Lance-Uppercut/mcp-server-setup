@@ -213,10 +213,11 @@ Create these Jenkins credentials before running the pipeline:
 - Secret text: `mcp-todoist-api-token`
 - Secret text: `mcp-yahoo-email`
 - Secret text: `mcp-yahoo-app-password`
-- Secret text: `mcp-signal-base-url`
 - Secret text: `mcp-signal-account`
 - Secret text: `mcp-signal-username`
 - Secret text: `mcp-signal-password`
+
+Signal base URL is set by pipeline default to `http://signal-proxy:8080`.
 - Secret text: `mcp-alertmanager-url`
 - Secret text: `mcp-router-password`
 - Secret text: `mcp-portainer-build1-token`
