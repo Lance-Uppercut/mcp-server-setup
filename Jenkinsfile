@@ -44,7 +44,8 @@ pipeline {
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'tado-mcp', context: './servers/tado-mcp'],
                         [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
-                        [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp']
+                        [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp'],
+                        [imageName: 'portainer-mcp', context: './servers/portainer-mcp']
                     ]
                     
                     echo "Services to build: ${services.collect { it.imageName }.join(', ')}"
@@ -170,12 +171,10 @@ PY
                             echo "$GITHUB_REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_REGISTRY_USER" --password-stdin
                         '''
 
-                        sh script: "${composeCommand} down --remove-orphans", returnStatus: true
-
                         timeout(time: 5, unit: 'MINUTES') {
                             sh "${composeCommand} pull"
                             sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
-                            sh "${composeCommand} up -d"
+                            sh "${composeCommand} up -d --remove-orphans"
                         }
 
                         sh """
