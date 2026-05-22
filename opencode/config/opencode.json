@@ -33,6 +33,36 @@
       "type": "remote",
       "url": "http://host.docker.internal:3105/sse",
       "enabled": true
+    },
+    "portainer-build1": {
+      "type": "remote",
+      "url": "http://portainer-build1:3111/sse",
+      "enabled": false
+    },
+    "portainer-build2": {
+      "type": "remote",
+      "url": "http://portainer-build2:3112/sse",
+      "enabled": false
+    },
+    "portainer-monitor": {
+      "type": "remote",
+      "url": "http://portainer-monitor:3113/sse",
+      "enabled": false
+    },
+    "portainer-observability1": {
+      "type": "remote",
+      "url": "http://portainer-observability1:3114/sse",
+      "enabled": false
+    },
+    "portainer-tools1": {
+      "type": "remote",
+      "url": "http://portainer-tools1:3115/sse",
+      "enabled": false
+    },
+    "portainer-production1": {
+      "type": "remote",
+      "url": "http://portainer-production1:3116/sse",
+      "enabled": false
     }
   }
 }

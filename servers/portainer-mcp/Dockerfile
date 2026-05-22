@@ -1,22 +1,18 @@
-FROM golang:1.22-alpine AS builder
-
-RUN apk add --no-cache git make
+FROM python:3.12-slim
 
 WORKDIR /app
 
-RUN git clone --depth 1 --branch v0.7.0 https://github.com/portainer/portainer-mcp.git .
+RUN pip install --no-cache-dir \
+    mcp[cli] \
+    httpx
 
-RUN go build -o portainer-mcp ./cmd/portainer-mcp
+COPY server.py .
 
-FROM alpine:latest
-
-RUN apk add --no-cache ca-certificates
-
-WORKDIR /app
-
-COPY --from=builder /app/portainer-mcp .
-
-ENV PORTAINER_SERVER=http://localhost:6500
+ENV PORTAINER_BASE_URL=http://localhost:6500
 ENV PORTAINER_TOKEN=
+ENV MCP_HOST=0.0.0.0
+ENV MCP_PORT=3111
 
-ENTRYPOINT ["/app/portainer-mcp"]
+EXPOSE 3111
+
+CMD ["python", "server.py"]

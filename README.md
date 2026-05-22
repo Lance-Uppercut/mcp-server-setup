@@ -16,7 +16,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | Playwright            | Microsoft Playwright MCP        | 3106 | SSE         | http://localhost:3106/sse                    |
 | GitHub                | github-mcp-server               | -    | stdio       | Claude Desktop only                          |
 | Jenkins               | mcpland/jenkins-mcp             | -    | stdio       | Claude Desktop only                          |
-| Portainer (6 servers) | portainer/portainer-mcp         | -    | stdio       | `docker compose run --rm portainer-{server}` |
+| Portainer (6 servers) | Custom FastMCP wrapper (local)  | 3111-3116 | SSE     | http://localhost:3111/sse (build1)           |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
 
@@ -190,6 +190,13 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 ## Jenkins Deployment Secrets
 
 The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials and starts compose with `docker compose --env-file ./runtime-secrets/runtime.env ...`.
+
+Deploys use an in-place rollout sequence:
+
+1. `docker compose pull`
+2. `docker compose up -d --remove-orphans`
+
+This avoids stopping healthy MCP services before a pull succeeds.
 
 `runtime-secrets/` is deleted in the pipeline `post` section and is gitignored.
 
@@ -397,14 +404,18 @@ networks:
 See [Microsoft Playwright MCP Server](https://github.com/microsoft/playwright-mcp) for documentation.
 
 ### Portainer
-See [Portainer MCP Server](https://github.com/portainer/portainer-mcp) for documentation.
+The Portainer MCP services use a local FastMCP SSE wrapper in `servers/portainer-mcp` and are built/pushed through CI as `registry:5000/offbeat-iot/portainer-mcp:latest`.
 
-Available servers (use with `docker compose run --rm portainer-{server}`):
-- `portainer-build1` - http://build1.home:6500
-- `portainer-build2` - http://build2.home:6500
-- `portainer-monitor` - http://192.168.1.60:6500
-- `portainer-observability1` - http://192.168.1.80:6500
-- `portainer-tools1` - http://192.168.1.17:6500
-- `portainer-production1` - http://192.168.1.85:6500
+Required environment variables per service:
+- `PORTAINER_BASE_URL` (or `PORTAINER_SERVER`) for the Portainer host
+- `PORTAINER_TOKEN` for API authentication
+
+Available environment services and SSE endpoints:
+- `portainer-build1` - Portainer `http://build1.home:6500`, SSE `http://localhost:3111/sse`
+- `portainer-build2` - Portainer `http://build2.home:6500`, SSE `http://localhost:3112/sse`
+- `portainer-monitor` - Portainer `http://192.168.1.60:6500`, SSE `http://localhost:3113/sse`
+- `portainer-observability1` - Portainer `http://192.168.1.80:6500`, SSE `http://localhost:3114/sse`
+- `portainer-tools1` - Portainer `http://192.168.1.17:6500`, SSE `http://localhost:3115/sse`
+- `portainer-production1` - Portainer `http://192.168.1.85:6500`, SSE `http://localhost:3116/sse`
 
 Set `PORTAINER_{SERVER}_TOKEN` in `.env` file.
