@@ -165,15 +165,25 @@ PY
                         '''
 
                         def composeCommand = 'docker compose -f docker-compose.yml --env-file ./runtime-secrets/runtime.env'
+                        def deployServices = [
+                            'yahoo-mail-mcp',
+                            'google-workspace-mcp',
+                            'tado-mcp',
+                            'todoist-mcp',
+                            'asus-router-mcp',
+                            'playwright-mcp',
+                            'alertmanager-mcp'
+                        ]
+                        def deployServiceArgs = deployServices.join(' ')
 
                         sh '''
                             echo "$GITHUB_REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_REGISTRY_USER" --password-stdin
                         '''
 
                         timeout(time: 5, unit: 'MINUTES') {
-                            sh "${composeCommand} pull"
+                            sh "${composeCommand} pull ${deployServiceArgs}"
                             sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
-                            sh "${composeCommand} up -d --remove-orphans"
+                            sh "${composeCommand} up -d --remove-orphans ${deployServiceArgs}"
                         }
 
                         sh """
