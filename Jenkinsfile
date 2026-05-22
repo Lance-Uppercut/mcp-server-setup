@@ -170,12 +170,10 @@ PY
                             echo "$GITHUB_REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_REGISTRY_USER" --password-stdin
                         '''
 
-                        sh script: "${composeCommand} down --remove-orphans", returnStatus: true
-
                         timeout(time: 5, unit: 'MINUTES') {
                             sh "${composeCommand} pull"
                             sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
-                            sh "${composeCommand} up -d"
+                            sh "${composeCommand} up -d --remove-orphans"
                         }
 
                         sh """
@@ -233,10 +231,7 @@ PY
     post {
         unsuccessful {
             script {
-                def composeCommand = fileExists('./runtime-secrets/runtime.env')
-                    ? 'docker compose --env-file ./runtime-secrets/runtime.env'
-                    : 'docker compose'
-                sh script: "${composeCommand} down", returnStatus: true
+                sh 'echo "Build failed: keeping existing MCP services running for stability."'
             }
         }
         always {
