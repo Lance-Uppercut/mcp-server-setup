@@ -14,10 +14,11 @@ services:
       - TODOIST_API_TOKEN=${TODOIST_API_TOKEN:-}
       - YAHOO_EMAIL=${YAHOO_EMAIL:-}
       - YAHOO_APP_PASSWORD=${YAHOO_APP_PASSWORD:-}
-      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-}
+      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-http://signal-proxy:8080}
       - SIGNAL_ACCOUNT=${SIGNAL_ACCOUNT:-}
       - SIGNAL_USERNAME=${SIGNAL_USERNAME:-}
       - SIGNAL_PASSWORD=${SIGNAL_PASSWORD:-}
+      - SENTINEL_WEBHOOK_URL=${SENTINEL_WEBHOOK_URL:-}
     build:
       context: ./opencode
       dockerfile: Dockerfile
@@ -126,18 +127,37 @@ services:
     networks:
       - mcp-network
 
+  # Signal CLI REST API backend
+  signal-proxy:
+    image: bbernhard/signal-cli-rest-api:latest
+    container_name: signal-proxy
+    environment:
+      - MODE=${SIGNAL_CLI_MODE:-json-rpc-native}
+    volumes:
+      - ${MCP_DATA_DIR:-./data}/signal-cli:/home/.local/share/signal-cli
+    ports:
+      - "8080:8080"
+    networks:
+      - mcp-network
+
   # Signal MCP Server (SSE mode)
   signal-mcp:
-    image: ghcr.io/offbeat-iot/signal-mcp-server:latest
+    image: registry:5000/offbeat-iot/signal-mcp:latest
     container_name: signal-mcp
+    build:
+      context: ./servers/signal-mcp
+      dockerfile: Dockerfile
+    depends_on:
+      - signal-proxy
     environment:
       - MCP_TRANSPORT=sse
       - MCP_HOST=0.0.0.0
       - MCP_PORT=3107
-      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL}
+      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-http://signal-proxy:8080}
       - SIGNAL_ACCOUNT=${SIGNAL_ACCOUNT}
       - SIGNAL_USERNAME=${SIGNAL_USERNAME}
       - SIGNAL_PASSWORD=${SIGNAL_PASSWORD}
+      - SENTINEL_WEBHOOK_URL=${SENTINEL_WEBHOOK_URL:-}
     ports:
       - "3107:3107"
     networks:

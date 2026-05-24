@@ -115,6 +115,7 @@ if [[ "$CHECK_CONTAINERS" -eq 1 ]]; then
       check_container "yahoo" '^yahoo-mail-mcp\|'
       check_container "alertmanager" '^alertmanager-mcp\|'
       check_container "tado" '^tado-mcp\|'
+      check_container "signal-proxy" '^signal-proxy\|'
       check_container "signal" '^signal-mcp\|'
       check_container "google" 'google-workspace-mcp.*\|'
       check_container "todoist" '^todoist-mcp\|'

@@ -43,6 +43,7 @@ pipeline {
                         [imageName: 'yahoo-mail-mcp', context: './servers/yahoo-mail-sse'],
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'tado-mcp', context: './servers/tado-mcp'],
+                        [imageName: 'signal-mcp', context: './servers/signal-mcp'],
                         [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
                         [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp'],
                         [imageName: 'portainer-mcp', context: './servers/portainer-mcp']

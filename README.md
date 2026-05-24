@@ -10,7 +10,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | Yahoo Mail            | Custom Node.js SSE wrapper → yunfeizhu/mcp-mail-server | 3101 | SSE         | http://localhost:3101/mcp/sse                |
 | Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
 | Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
-| Signal                | Signal MCP bridge               | 3107 | SSE         | http://localhost:3107/sse                    |
+| Signal                | Custom Python MCP + signal-cli-rest-api | 3107 | SSE         | http://localhost:3107/sse                    |
 | Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
 | Todoist               | koki-develop/todoist-mcp-server | 3104 | SSE         | http://localhost:3104/sse                    |
 | ASUS Router           | Custom Node.js MCP (local)      | 3105 | SSE         | http://localhost:3105/sse                    |
@@ -230,6 +230,8 @@ Signal base URL is set by pipeline default to `http://signal-proxy:8080`.
 - Secret file: `mcp-google-oauth2-seed-json`
 - Secret file: `mcp-tado-tokens-json`
 
+Signal base URL is set by pipeline default to `http://signal-proxy:8080`.
+
 `mcp-google-oauth2-seed-json` must contain a JSON object keyed by Google OAuth credential filename:
 
 ```json
@@ -266,6 +268,7 @@ services:
           {"url":"http://host.docker.internal:3101/mcp/sse","name":"yahoo-mail","type":"sse"},
           {"url":"http://host.docker.internal:8001/sse","name":"alertmanager","type":"sse"},
           {"url":"http://host.docker.internal:3102/sse","name":"tado","type":"sse"},
+          {"url":"http://host.docker.internal:3107/sse","name":"signal","type":"sse"},
           {"url":"http://host.docker.internal:3103/sse","name":"google-workspace","type":"sse"},
           {"url":"http://host.docker.internal:3104/sse","name":"todoist","type":"sse"},
           {"url":"http://host.docker.internal:3105/sse","name":"asus-router","type":"sse"},
@@ -325,6 +328,9 @@ curl http://localhost:8001/sse
 
 # Tado (SSE)
 curl http://localhost:3102/sse
+
+# Signal (SSE)
+curl http://localhost:3107/sse
 
 # Google Workspace (SSE)
 curl http://localhost:3103/sse
