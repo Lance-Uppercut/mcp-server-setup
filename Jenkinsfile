@@ -43,6 +43,7 @@ pipeline {
                         [imageName: 'yahoo-mail-mcp', context: './servers/yahoo-mail-sse'],
                         [imageName: 'google-workspace-mcp', context: './servers/mcp-google-workspace'],
                         [imageName: 'tado-mcp', context: './servers/tado-mcp'],
+                        [imageName: 'signal-mcp', context: './servers/signal-mcp'],
                         [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
                         [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp'],
                         [imageName: 'portainer-mcp', context: './servers/portainer-mcp']
@@ -119,6 +120,7 @@ pipeline {
                         def runtimeEnvContent = runtimeEnvSpecs.collect { spec ->
                             "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
                         }
+                        runtimeEnvContent += "SIGNAL_BASE_URL=${quoteEnvValue('http://signal-proxy:8080')}"
                         runtimeEnvContent += "MCP_DATA_DIR=${quoteEnvValue(mcpDataDir)}"
                         runtimeEnvContent += "COMPOSE_PROJECT_NAME=${quoteEnvValue('mcp-servers')}"
                         runtimeEnvContent = runtimeEnvContent.join('\n') + '\n'
@@ -235,7 +237,7 @@ PY
                 def composeCommand = fileExists('./runtime-secrets/runtime.env')
                     ? 'docker compose --env-file ./runtime-secrets/runtime.env'
                     : 'docker compose'
-                sh script: "${composeCommand} down", returnStatus: true
+                sh script: "${composeCommand} ps", returnStatus: true
             }
         }
         always {

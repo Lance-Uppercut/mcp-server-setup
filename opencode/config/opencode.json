@@ -29,6 +29,11 @@
       "url": "http://tado-mcp:3102/sse",
       "enabled": false
     },
+    "signal": {
+      "type": "remote",
+      "url": "http://signal-mcp:3107/sse",
+      "enabled": false
+    },
     "asus-router": {
       "type": "remote",
       "url": "http://host.docker.internal:3105/sse",
