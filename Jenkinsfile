@@ -180,18 +180,18 @@ PY
 
                             if [ -d ./runtime-secrets/google-oauth2-seed ]; then
                                 for seedFile in ./runtime-secrets/google-oauth2-seed/.oauth2.*.json; do
-                                    [ -f "$seedFile" ] || continue
-                                    seedName=$(basename "$seedFile")
-                                    targetFile='${mcpDataDir}/google-workspace/credentials/'"$seedName"
-                                    if [ ! -f "$targetFile" ]; then
-                                        install -m 600 "$seedFile" "$targetFile"
+                                    [ -f "\$seedFile" ] || continue
+                                    seedName=\$(basename "\$seedFile")
+                                    targetFile='${mcpDataDir}/google-workspace/credentials/'"\$seedName"
+                                    if [ ! -f "\$targetFile" ]; then
+                                        install -m 600 "\$seedFile" "\$targetFile"
                                     fi
                                 done
                             fi
 
                             tadoTarget='${mcpDataDir}/tado/tokens.json'
-                            if [ ! -f "$tadoTarget" ]; then
-                                install -m 600 "\$SECRET_TADO_TOKENS_FILE" "$tadoTarget"
+                            if [ ! -f "\$tadoTarget" ]; then
+                                install -m 600 "\$SECRET_TADO_TOKENS_FILE" "\$tadoTarget"
                             fi
                         """
 
