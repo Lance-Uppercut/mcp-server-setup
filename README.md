@@ -228,6 +228,13 @@ Create these Jenkins credentials before running the pipeline:
 
 Signal base URL is set by pipeline default to `http://signal-proxy:8080`.
 
+Signal message ingestion is driven by the `signal-mcp` container polling `signal-proxy`.
+
+- `SIGNAL_POLL_ENABLED` (default `true`) enables background polling.
+- `SIGNAL_POLL_INTERVAL_SECONDS` (default `10`) controls poll cadence.
+- `SIGNAL_POLL_TIMEOUT_SECONDS` (default `5`) controls receive timeout per poll.
+- `SENTINEL_WEBHOOK_URL` (optional) forwards each received message payload to Sentinel.
+
 `mcp-google-oauth2-seed-json` must contain a JSON object keyed by Google OAuth credential filename:
 
 ```json
