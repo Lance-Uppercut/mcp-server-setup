@@ -237,7 +237,7 @@ PY
                 def composeCommand = fileExists('./runtime-secrets/runtime.env')
                     ? 'docker compose --env-file ./runtime-secrets/runtime.env'
                     : 'docker compose'
-                sh script: "${composeCommand} down", returnStatus: true
+                sh script: "${composeCommand} ps", returnStatus: true
             }
         }
         always {
