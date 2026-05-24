@@ -24,6 +24,9 @@ PORT = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "3107")))
 SIGNAL_BASE_URL = os.environ.get("SIGNAL_BASE_URL", "http://signal-proxy:8080").rstrip("/")
 SENTINEL_WEBHOOK_URL = os.environ.get("SENTINEL_WEBHOOK_URL", "")
 SIGNAL_NUMBER = os.environ.get("SIGNAL_NUMBER", "+4522386548")
+SIGNAL_POLL_ENABLED = os.environ.get("SIGNAL_POLL_ENABLED", "true").lower() in {"1", "true", "yes", "on"}
+SIGNAL_POLL_INTERVAL_SECONDS = int(os.environ.get("SIGNAL_POLL_INTERVAL_SECONDS", "10"))
+SIGNAL_POLL_TIMEOUT_SECONDS = int(os.environ.get("SIGNAL_POLL_TIMEOUT_SECONDS", "5"))
 
 
 def _now_iso() -> str:
@@ -96,6 +99,18 @@ async def _forward_to_sentinel(messages: list[dict[str, Any]], account: str, sen
                 errors.append(str(exc))
 
     return {"forwarded": forwarded, "errors": errors}
+
+
+async def _poll_forever() -> None:
+    while True:
+        try:
+            raw = await _receive(SIGNAL_NUMBER, timeout_seconds=SIGNAL_POLL_TIMEOUT_SECONDS)
+            messages = _extract_messages(raw)
+            if messages and SENTINEL_WEBHOOK_URL:
+                await _forward_to_sentinel(messages, SIGNAL_NUMBER, SENTINEL_WEBHOOK_URL)
+        except Exception:
+            pass
+        await asyncio.sleep(max(1, SIGNAL_POLL_INTERVAL_SECONDS))
 
 
 @server.list_tools()
@@ -188,6 +203,9 @@ async def call_tool(name: str, arguments: dict[str, Any]):
 
 
 async def main() -> None:
+    if SIGNAL_POLL_ENABLED:
+        asyncio.create_task(_poll_forever())
+
     if TRANSPORT_MODE == "sse":
         sse_transport = SseServerTransport("/messages/")
 
