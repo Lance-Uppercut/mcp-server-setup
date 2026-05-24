@@ -198,7 +198,7 @@ PY
                         timeout(time: 10, unit: 'MINUTES') {
                             sh '''
                                 [ "$(docker info --format '{{.Swarm.LocalNodeState}}')" = "active" ] || docker swarm init >/dev/null
-                                docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create --driver overlay --attachable sentinel_sentinel-network
+                                docker network inspect sentinel_sentinel-swarm-network >/dev/null 2>&1 || docker network create --driver overlay --attachable sentinel_sentinel-swarm-network
                                 set -a
                                 . ./runtime-secrets/runtime.env
                                 set +a

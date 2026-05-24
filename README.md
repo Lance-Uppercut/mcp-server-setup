@@ -197,6 +197,7 @@ The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from
 1. `docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers`
 2. Swarm rolling updates (`parallelism: 1`, `order: start-first`, rollback on failure)
 3. Placement constraints for all services to `node.hostname == build1`
+4. Uses external swarm overlay network `sentinel_sentinel-swarm-network`
 
 This keeps deploys non-disruptive and runs MCP services on the build swarm while pinning workloads to the build1 node.
 

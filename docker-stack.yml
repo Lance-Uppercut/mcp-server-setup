@@ -259,5 +259,5 @@ services:
 
 networks:
   mcp-network:
-    name: sentinel_sentinel-network
+    name: sentinel_sentinel-swarm-network
     external: true
