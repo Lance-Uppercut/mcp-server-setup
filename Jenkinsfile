@@ -86,7 +86,6 @@ pipeline {
                         [envName: 'TODOIST_API_TOKEN', credentialId: 'mcp-todoist-api-token', variable: 'SECRET_TODOIST_API_TOKEN'],
                         [envName: 'YAHOO_EMAIL', credentialId: 'mcp-yahoo-email', variable: 'SECRET_YAHOO_EMAIL'],
                         [envName: 'YAHOO_APP_PASSWORD', credentialId: 'mcp-yahoo-app-password', variable: 'SECRET_YAHOO_APP_PASSWORD'],
-                        [envName: 'SIGNAL_ACCOUNT', credentialId: 'mcp-signal-account', variable: 'SECRET_SIGNAL_ACCOUNT'],
                         [envName: 'ALERTMANAGER_URL', credentialId: 'mcp-alertmanager-url', variable: 'SECRET_ALERTMANAGER_URL'],
                         [envName: 'ROUTER_PASSWORD', credentialId: 'mcp-router-password', variable: 'SECRET_ROUTER_PASSWORD'],
                         [envName: 'PORTAINER_BUILD1_TOKEN', credentialId: 'mcp-portainer-build1-token', variable: 'SECRET_PORTAINER_BUILD1_TOKEN'],
@@ -109,7 +108,6 @@ pipeline {
                     } + runtimeFileSpecs.collect { spec ->
                         file(credentialsId: spec.credentialId, variable: spec.variable)
                     } + [
-                        usernamePassword(credentialsId: 'mcp-signal-username', usernameVariable: 'SECRET_SIGNAL_USERNAME', passwordVariable: 'SECRET_SIGNAL_PASSWORD'),
                         usernamePassword(credentialsId: 'github', usernameVariable: 'GITHUB_REGISTRY_USER', passwordVariable: 'GITHUB_REGISTRY_TOKEN')
                     ]
 
@@ -122,8 +120,6 @@ pipeline {
                         def runtimeEnvContent = runtimeEnvSpecs.collect { spec ->
                             "${spec.envName}=${quoteEnvValue(env."${spec.variable}")}"
                         }
-                        runtimeEnvContent += "SIGNAL_USERNAME=${quoteEnvValue(env.SECRET_SIGNAL_USERNAME)}"
-                        runtimeEnvContent += "SIGNAL_PASSWORD=${quoteEnvValue(env.SECRET_SIGNAL_PASSWORD)}"
                         runtimeEnvContent += "SIGNAL_BASE_URL=${quoteEnvValue('http://signal-proxy:8080')}"
                         runtimeEnvContent += "MCP_DATA_DIR=${quoteEnvValue(mcpDataDir)}"
                         runtimeEnvContent += "COMPOSE_PROJECT_NAME=${quoteEnvValue('mcp-servers')}"

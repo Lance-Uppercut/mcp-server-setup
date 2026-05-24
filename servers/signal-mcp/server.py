@@ -22,33 +22,28 @@ TRANSPORT_MODE = os.environ.get("TRANSPORT_MODE", "sse").lower()
 PORT = int(os.environ.get("MCP_PORT", os.environ.get("PORT", "3107")))
 
 SIGNAL_BASE_URL = os.environ.get("SIGNAL_BASE_URL", "http://signal-proxy:8080").rstrip("/")
-SIGNAL_ACCOUNT = os.environ.get("SIGNAL_ACCOUNT", "")
-SIGNAL_USERNAME = os.environ.get("SIGNAL_USERNAME", "")
-SIGNAL_PASSWORD = os.environ.get("SIGNAL_PASSWORD", "")
 SENTINEL_WEBHOOK_URL = os.environ.get("SENTINEL_WEBHOOK_URL", "")
-
-
-def _auth() -> tuple[str, str] | None:
-    if SIGNAL_USERNAME and SIGNAL_PASSWORD:
-        return SIGNAL_USERNAME, SIGNAL_PASSWORD
-    return None
 
 
 def _now_iso() -> str:
     return datetime.now(timezone.utc).isoformat()
 
 
-def _require_account(account: str | None) -> str:
-    resolved = account or SIGNAL_ACCOUNT
-    if not resolved:
-        raise ValueError("Signal account is required. Set SIGNAL_ACCOUNT or pass account.")
-    return resolved
+async def _resolve_account(account: str | None) -> str:
+    if account:
+        return account
+
+    accounts = await _signal_request("GET", "/v1/accounts")
+    if isinstance(accounts, list) and len(accounts) == 1 and isinstance(accounts[0], str):
+        return accounts[0]
+
+    raise ValueError("Signal account is required. Pass account explicitly when multiple accounts exist.")
 
 
 async def _signal_request(method: str, path: str, payload: dict[str, Any] | None = None, params: dict[str, Any] | None = None) -> Any:
     url = f"{SIGNAL_BASE_URL}{path}"
     async with httpx.AsyncClient(timeout=30.0) as client:
-        response = await client.request(method, url, json=payload, params=params, auth=_auth())
+        response = await client.request(method, url, json=payload, params=params)
         response.raise_for_status()
         if not response.content:
             return {"ok": True}
@@ -120,7 +115,7 @@ async def list_tools() -> list[Tool]:
                 "properties": {
                     "recipient": {"type": "string", "description": "Recipient phone number in E.164 format."},
                     "message": {"type": "string", "description": "Message body to send."},
-                    "account": {"type": "string", "description": "Signal sender account. Defaults to SIGNAL_ACCOUNT."},
+                    "account": {"type": "string", "description": "Signal sender account. Optional when exactly one account is registered."},
                 },
                 "required": ["recipient", "message"],
             },
@@ -131,7 +126,7 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "account": {"type": "string", "description": "Signal account. Defaults to SIGNAL_ACCOUNT."},
+                    "account": {"type": "string", "description": "Signal account. Optional when exactly one account is registered."},
                     "timeout_seconds": {"type": "integer", "description": "Receive timeout in seconds.", "default": 5},
                 },
             },
@@ -142,7 +137,7 @@ async def list_tools() -> list[Tool]:
             inputSchema={
                 "type": "object",
                 "properties": {
-                    "account": {"type": "string", "description": "Signal account. Defaults to SIGNAL_ACCOUNT."},
+                    "account": {"type": "string", "description": "Signal account. Optional when exactly one account is registered."},
                     "timeout_seconds": {"type": "integer", "description": "Receive timeout in seconds.", "default": 5},
                     "sentinel_webhook_url": {
                         "type": "string",
@@ -158,7 +153,7 @@ async def list_tools() -> list[Tool]:
 async def call_tool(name: str, arguments: dict[str, Any]):
     try:
         if name == "send_message":
-            account = _require_account(arguments.get("account"))
+            account = await _resolve_account(arguments.get("account"))
             recipient = arguments.get("recipient")
             message = arguments.get("message")
             payload = {
@@ -170,7 +165,7 @@ async def call_tool(name: str, arguments: dict[str, Any]):
             return {"isError": False, "content": [{"type": "text", "text": json.dumps(result)}]}
 
         if name == "receive_messages":
-            account = _require_account(arguments.get("account"))
+            account = await _resolve_account(arguments.get("account"))
             timeout_seconds = int(arguments.get("timeout_seconds", 5))
             raw = await _receive(account, timeout_seconds=timeout_seconds)
             messages = _extract_messages(raw)
@@ -183,7 +178,7 @@ async def call_tool(name: str, arguments: dict[str, Any]):
             return {"isError": False, "content": [{"type": "text", "text": json.dumps(result)}]}
 
         if name == "poll_and_forward_messages":
-            account = _require_account(arguments.get("account"))
+            account = await _resolve_account(arguments.get("account"))
             timeout_seconds = int(arguments.get("timeout_seconds", 5))
             webhook = arguments.get("sentinel_webhook_url") or SENTINEL_WEBHOOK_URL
             if not webhook:
