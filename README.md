@@ -194,12 +194,13 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials and starts compose with `docker compose --env-file ./runtime-secrets/runtime.env ...`.
 
-Deploys use an in-place rollout sequence:
+Deploys use a rolling, service-by-service rollout sequence:
 
 1. `docker compose pull`
-2. `docker compose up -d --remove-orphans`
+2. For each service: `docker compose up -d --no-deps <service>`
+3. Wait for each service to be healthy/running before continuing
 
-This avoids stopping healthy MCP services before a pull succeeds.
+This avoids taking down all MCP services at once and limits disruption to one service at a time.
 
 `runtime-secrets/` is deleted in the pipeline `post` section and is gitignored.
 
