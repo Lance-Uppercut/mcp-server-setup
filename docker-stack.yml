@@ -1,0 +1,263 @@
+version: "3.9"
+
+services:
+  yahoo-mail-mcp:
+    image: registry:5000/offbeat-iot/yahoo-mail-mcp:latest
+    environment:
+      - IMAP_HOST=imap.mail.yahoo.com
+      - IMAP_PORT=993
+      - IMAP_SECURE=true
+      - SMTP_HOST=smtp.mail.yahoo.com
+      - SMTP_PORT=465
+      - SMTP_SECURE=true
+      - EMAIL_USER=${YAHOO_EMAIL}
+      - EMAIL_PASS=${YAHOO_APP_PASSWORD}
+    ports:
+      - target: 3101
+        published: 3101
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  alertmanager-mcp:
+    image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
+    environment:
+      - ALERTMANAGER_URL=${ALERTMANAGER_URL}
+      - ALERTMANAGER_USERNAME=${ALERTMANAGER_USERNAME:-}
+      - ALERTMANAGER_PASSWORD=${ALERTMANAGER_PASSWORD:-}
+      - MCP_TRANSPORT=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=8001
+    ports:
+      - target: 8001
+        published: 8001
+        protocol: tcp
+        mode: ingress
+    extra_hosts:
+      - "observability1:192.168.1.80"
+    networks:
+      - mcp-network
+
+  google-workspace-mcp:
+    image: registry:5000/offbeat-iot/google-workspace-mcp:latest
+    command:
+      - node
+      - dist/server.js
+      - --gauth-file
+      - /data/google-workspace/.gauth.json
+      - --accounts-file
+      - /data/google-workspace/.accounts.json
+      - --credentials-dir
+      - /data/google-workspace/credentials
+    environment:
+      - TRANSPORT_MODE=sse
+      - PORT=3103
+    ports:
+      - target: 3103
+        published: 3103
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - ${MCP_DATA_DIR:-./data}/google-workspace:/data/google-workspace
+    networks:
+      - mcp-network
+
+  tado-mcp:
+    image: registry:5000/offbeat-iot/tado-mcp:latest
+    environment:
+      - SERVER_PORT=3102
+      - TADO_TOKENS_FILE=/data/tokens.json
+    ports:
+      - target: 3102
+        published: 3102
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - ${MCP_DATA_DIR:-./data}/tado:/data
+    networks:
+      - mcp-network
+
+  signal-proxy:
+    image: bbernhard/signal-cli-rest-api:latest
+    environment:
+      - MODE=${SIGNAL_CLI_MODE:-json-rpc-native}
+      - RECEIVE_WEBHOOK_URL=${SIGNAL_RECEIVE_WEBHOOK_URL:-http://build1:18442/api/signal/webhook}
+    volumes:
+      - ${MCP_DATA_DIR:-./data}/signal-cli:/home/.local/share/signal-cli
+    ports:
+      - target: 8080
+        published: 8080
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  signal-mcp:
+    image: registry:5000/offbeat-iot/signal-mcp:latest
+    environment:
+      - MCP_TRANSPORT=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3107
+      - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-http://signal-proxy:8080}
+      - SENTINEL_WEBHOOK_URL=${SENTINEL_WEBHOOK_URL:-}
+      - SIGNAL_NUMBER=${SIGNAL_NUMBER:-+4522386548}
+      - SIGNAL_POLL_ENABLED=${SIGNAL_POLL_ENABLED:-true}
+      - SIGNAL_POLL_INTERVAL_SECONDS=${SIGNAL_POLL_INTERVAL_SECONDS:-10}
+      - SIGNAL_POLL_TIMEOUT_SECONDS=${SIGNAL_POLL_TIMEOUT_SECONDS:-5}
+    ports:
+      - target: 3107
+        published: 3107
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  todoist-mcp:
+    image: registry:5000/offbeat-iot/todoist-mcp:latest
+    command:
+      - python
+      - -c
+      - from todoist_mcp_server.todoist import mcp; from mcp.server.transport_security import TransportSecuritySettings; mcp.settings.host='0.0.0.0'; mcp.settings.port=3104; mcp.settings.transport_security=TransportSecuritySettings(enable_dns_rebinding_protection=False); mcp.run(transport='sse')
+    environment:
+      - TODOIST_API_TOKEN=${TODOIST_API_TOKEN}
+    ports:
+      - target: 3104
+        published: 3104
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  asus-router-mcp:
+    image: registry:5000/offbeat-iot/asus-router-mcp:latest
+    environment:
+      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
+      - ROUTER_PASSWORD=${ROUTER_PASSWORD}
+      - USE_SSL=${USE_SSL:-true}
+      - TRANSPORT_MODE=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3105
+    ports:
+      - target: 3105
+        published: 3105
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  playwright-mcp:
+    image: mcr.microsoft.com/playwright/mcp:latest
+    command:
+      - --host
+      - 0.0.0.0
+      - --port
+      - "3106"
+      - --allowed-hosts
+      - "*"
+    environment:
+      - PLAYWRIGHT_MCP_HOST=0.0.0.0
+      - PLAYWRIGHT_MCP_PORT=3106
+    ports:
+      - target: 3106
+        published: 3106
+        protocol: tcp
+        mode: ingress
+    volumes:
+      - ${MCP_DATA_DIR:-./data}/playwright:/home/user
+    networks:
+      - mcp-network
+
+  portainer-build1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    environment:
+      - PORTAINER_BASE_URL=http://build1.home:6500
+      - PORTAINER_TOKEN=${PORTAINER_BUILD1_TOKEN}
+      - MCP_PORT=3111
+    ports:
+      - target: 3111
+        published: 3111
+        protocol: tcp
+        mode: ingress
+    extra_hosts:
+      - "build1.home:192.168.1.10"
+    networks:
+      - mcp-network
+
+  portainer-build2:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    environment:
+      - PORTAINER_BASE_URL=http://build2.home:6500
+      - PORTAINER_TOKEN=${PORTAINER_BUILD2_TOKEN}
+      - MCP_PORT=3112
+    ports:
+      - target: 3112
+        published: 3112
+        protocol: tcp
+        mode: ingress
+    extra_hosts:
+      - "build2.home:192.168.1.11"
+    networks:
+      - mcp-network
+
+  portainer-monitor:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    environment:
+      - PORTAINER_BASE_URL=http://192.168.1.60:6500
+      - PORTAINER_TOKEN=${PORTAINER_MONITOR_TOKEN}
+      - MCP_PORT=3113
+    ports:
+      - target: 3113
+        published: 3113
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  portainer-observability1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    environment:
+      - PORTAINER_BASE_URL=http://192.168.1.80:6500
+      - PORTAINER_TOKEN=${PORTAINER_OBSERVABILITY1_TOKEN}
+      - MCP_PORT=3114
+    ports:
+      - target: 3114
+        published: 3114
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  portainer-tools1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    environment:
+      - PORTAINER_BASE_URL=http://192.168.1.17:6500
+      - PORTAINER_TOKEN=${PORTAINER_TOOLS1_TOKEN}
+      - MCP_PORT=3115
+    ports:
+      - target: 3115
+        published: 3115
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+  portainer-production1:
+    image: registry:5000/offbeat-iot/portainer-mcp:latest
+    environment:
+      - PORTAINER_BASE_URL=http://192.168.1.85:6500
+      - PORTAINER_TOKEN=${PORTAINER_PRODUCTION1_TOKEN}
+      - MCP_PORT=3116
+    ports:
+      - target: 3116
+        published: 3116
+        protocol: tcp
+        mode: ingress
+    networks:
+      - mcp-network
+
+networks:
+  mcp-network:
+    name: sentinel_sentinel-swarm-network
+    external: true

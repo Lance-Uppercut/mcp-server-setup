@@ -167,59 +167,46 @@ for filename, payload in parsed.items():
 PY
                         '''
 
-                        def composeCommand = 'docker compose -f docker-compose.yml --env-file ./runtime-secrets/runtime.env'
+                        def stackName = 'mcp-servers'
 
                         sh '''
                             echo "$GITHUB_REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_REGISTRY_USER" --password-stdin
                         '''
 
-                        timeout(time: 10, unit: 'MINUTES') {
-                            sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
-                            sh '''
-                                chmod +x ./scripts/rolling-deploy.sh
-                                COMPOSE_FILE=docker-compose.yml \
-                                ENV_FILE=./runtime-secrets/runtime.env \
-                                HEALTH_TIMEOUT_SECONDS=120 \
-                                HEALTH_POLL_SECONDS=3 \
-                                ./scripts/rolling-deploy.sh
-                            '''
-                        }
-
                         sh """
-                            googleContainer=\$(${composeCommand} ps -q google-workspace-mcp)
-                            tadoContainer=\$(${composeCommand} ps -q tado-mcp)
-
-                            if [ -z "\$googleContainer" ]; then
-                                echo "google-workspace-mcp container not found"
-                                exit 1
-                            fi
-                            if [ -z "\$tadoContainer" ]; then
-                                echo "tado-mcp container not found"
-                                exit 1
-                            fi
-
-                            docker cp "\$SECRET_GOOGLE_GAUTH_FILE" "\$googleContainer:/data/google-workspace/.gauth.json"
-                            docker cp "\$SECRET_GOOGLE_ACCOUNTS_FILE" "\$googleContainer:/data/google-workspace/.accounts.json"
-                            docker exec "\$googleContainer" sh -lc 'mkdir -p /data/google-workspace/credentials && chmod 600 /data/google-workspace/.gauth.json /data/google-workspace/.accounts.json'
+                            mkdir -p '${mcpDataDir}/google-workspace/credentials' '${mcpDataDir}/tado'
+                            install -m 600 "\$SECRET_GOOGLE_GAUTH_FILE" '${mcpDataDir}/google-workspace/.gauth.json'
+                            install -m 600 "\$SECRET_GOOGLE_ACCOUNTS_FILE" '${mcpDataDir}/google-workspace/.accounts.json'
 
                             if [ -d ./runtime-secrets/google-oauth2-seed ]; then
                                 for seedFile in ./runtime-secrets/google-oauth2-seed/.oauth2.*.json; do
                                     [ -f "\$seedFile" ] || continue
                                     seedName=\$(basename "\$seedFile")
-                                    if ! docker exec "\$googleContainer" test -f "/data/google-workspace/credentials/\$seedName"; then
-                                        docker cp "\$seedFile" "\$googleContainer:/data/google-workspace/credentials/\$seedName"
-                                        docker exec "\$googleContainer" chmod 600 "/data/google-workspace/credentials/\$seedName"
+                                    targetFile='${mcpDataDir}/google-workspace/credentials/'"\$seedName"
+                                    if [ ! -f "\$targetFile" ]; then
+                                        install -m 600 "\$seedFile" "\$targetFile"
                                     fi
                                 done
                             fi
 
-                            docker cp "\$SECRET_TADO_TOKENS_FILE" "\$tadoContainer:/data/tokens.json"
-                            docker exec "\$tadoContainer" chmod 600 /data/tokens.json
-
-                            ${composeCommand} restart google-workspace-mcp tado-mcp
+                            tadoTarget='${mcpDataDir}/tado/tokens.json'
+                            if [ ! -f "\$tadoTarget" ]; then
+                                install -m 600 "\$SECRET_TADO_TOKENS_FILE" "\$tadoTarget"
+                            fi
                         """
 
-                        sh "${composeCommand} ps"
+                        timeout(time: 10, unit: 'MINUTES') {
+                            sh '''
+                                [ "$(docker info --format '{{.Swarm.LocalNodeState}}')" = "active" ] || docker swarm init >/dev/null
+                                docker network inspect sentinel_sentinel-swarm-network >/dev/null 2>&1 || docker network create --driver overlay --attachable sentinel_sentinel-swarm-network
+                                set -a
+                                . ./runtime-secrets/runtime.env
+                                set +a
+                                docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers
+                            '''
+                        }
+
+                        sh "docker stack services ${stackName}"
 
                         echo "Deployment complete!"
                     }
@@ -240,10 +227,7 @@ PY
     post {
         unsuccessful {
             script {
-                def composeCommand = fileExists('./runtime-secrets/runtime.env')
-                    ? 'docker compose --env-file ./runtime-secrets/runtime.env'
-                    : 'docker compose'
-                sh script: "${composeCommand} ps", returnStatus: true
+                sh script: 'docker stack services mcp-servers', returnStatus: true
             }
         }
         always {

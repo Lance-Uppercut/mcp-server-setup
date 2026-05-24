@@ -192,15 +192,14 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ## Jenkins Deployment Secrets
 
-The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials and starts compose with `docker compose --env-file ./runtime-secrets/runtime.env ...`.
+The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials, ensures Docker Swarm is active, and deploys with:
 
-Deploys use a rolling, service-by-service rollout sequence:
+1. `docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers`
+2. Swarm rolling updates (`parallelism: 1`, `order: start-first`, rollback on failure)
+3. Placement constraints for all services to `node.hostname == build1`
+4. Uses external swarm overlay network `sentinel_sentinel-swarm-network`
 
-1. `docker compose pull`
-2. For each service: `docker compose up -d --no-deps <service>`
-3. Wait for each service to be healthy/running before continuing
-
-This avoids taking down all MCP services at once and limits disruption to one service at a time.
+This keeps deploys non-disruptive and runs MCP services on the build swarm while pinning workloads to the build1 node.
 
 `runtime-secrets/` is deleted in the pipeline `post` section and is gitignored.
 
