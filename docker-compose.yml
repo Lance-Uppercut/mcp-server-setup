@@ -129,7 +129,6 @@ services:
     container_name: signal-proxy
     environment:
       - MODE=${SIGNAL_CLI_MODE:-json-rpc-native}
-      - RECEIVE_WEBHOOK_URL=${SIGNAL_RECEIVE_WEBHOOK_URL:-http://build1:18442/api/signal/webhook}
     volumes:
       - ${MCP_DATA_DIR:-./data}/signal-cli:/home/.local/share/signal-cli
     ports:
@@ -153,9 +152,6 @@ services:
       - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-http://signal-proxy:8080}
       - SENTINEL_WEBHOOK_URL=${SENTINEL_WEBHOOK_URL:-}
       - SIGNAL_NUMBER=${SIGNAL_NUMBER:-+4522386548}
-      - SIGNAL_POLL_ENABLED=${SIGNAL_POLL_ENABLED:-true}
-      - SIGNAL_POLL_INTERVAL_SECONDS=${SIGNAL_POLL_INTERVAL_SECONDS:-10}
-      - SIGNAL_POLL_TIMEOUT_SECONDS=${SIGNAL_POLL_TIMEOUT_SECONDS:-5}
     ports:
       - "3107:3107"
     networks:
