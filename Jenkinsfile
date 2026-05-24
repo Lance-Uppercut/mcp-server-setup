@@ -173,10 +173,16 @@ PY
                             echo "$GITHUB_REGISTRY_TOKEN" | docker login ghcr.io --username "$GITHUB_REGISTRY_USER" --password-stdin
                         '''
 
-                        timeout(time: 5, unit: 'MINUTES') {
-                            sh "${composeCommand} pull"
+                        timeout(time: 10, unit: 'MINUTES') {
                             sh 'docker network inspect sentinel_sentinel-network >/dev/null 2>&1 || docker network create sentinel_sentinel-network'
-                            sh "${composeCommand} up -d --remove-orphans"
+                            sh '''
+                                chmod +x ./scripts/rolling-deploy.sh
+                                COMPOSE_FILE=docker-compose.yml \
+                                ENV_FILE=./runtime-secrets/runtime.env \
+                                HEALTH_TIMEOUT_SECONDS=120 \
+                                HEALTH_POLL_SECONDS=3 \
+                                ./scripts/rolling-deploy.sh
+                            '''
                         }
 
                         sh """
