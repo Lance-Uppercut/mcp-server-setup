@@ -1,0 +1,68 @@
+version: "3.9"
+
+x-deploy-defaults: &deploy-defaults
+  mode: replicated
+  replicas: 1
+  restart_policy:
+    condition: on-failure
+    delay: 5s
+    max_attempts: 3
+    window: 30s
+  update_config:
+    parallelism: 1
+    delay: 5s
+    order: start-first
+    failure_action: rollback
+  rollback_config:
+    parallelism: 1
+    order: stop-first
+  placement:
+    constraints:
+      - node.hostname == build1
+
+services:
+  yahoo-mail-mcp:
+    deploy:
+      <<: *deploy-defaults
+  alertmanager-mcp:
+    deploy:
+      <<: *deploy-defaults
+  google-workspace-mcp:
+    deploy:
+      <<: *deploy-defaults
+  tado-mcp:
+    deploy:
+      <<: *deploy-defaults
+  signal-proxy:
+    deploy:
+      <<: *deploy-defaults
+  signal-mcp:
+    deploy:
+      <<: *deploy-defaults
+  todoist-mcp:
+    deploy:
+      <<: *deploy-defaults
+  asus-router-mcp:
+    deploy:
+      <<: *deploy-defaults
+  playwright-mcp:
+    deploy:
+      <<: *deploy-defaults
+  portainer-build1:
+    deploy:
+      <<: *deploy-defaults
+  portainer-build2:
+    deploy:
+      <<: *deploy-defaults
+  portainer-monitor:
+    deploy:
+      <<: *deploy-defaults
+  portainer-observability1:
+    deploy:
+      <<: *deploy-defaults
+  portainer-tools1:
+    deploy:
+      <<: *deploy-defaults
+  portainer-production1:
+    deploy:
+      <<: *deploy-defaults
