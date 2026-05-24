@@ -129,6 +129,7 @@ services:
     container_name: signal-proxy
     environment:
       - MODE=${SIGNAL_CLI_MODE:-json-rpc-native}
+      - RECEIVE_WEBHOOK_URL=${SIGNAL_RECEIVE_WEBHOOK_URL:-http://build1:18442/api/signal/webhook}
     volumes:
       - ${MCP_DATA_DIR:-./data}/signal-cli:/home/.local/share/signal-cli
     ports:
