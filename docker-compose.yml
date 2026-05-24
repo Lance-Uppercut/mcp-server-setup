@@ -151,6 +151,7 @@ services:
       - MCP_PORT=3107
       - SIGNAL_BASE_URL=${SIGNAL_BASE_URL:-http://signal-proxy:8080}
       - SENTINEL_WEBHOOK_URL=${SENTINEL_WEBHOOK_URL:-}
+      - SIGNAL_NUMBER=${SIGNAL_NUMBER:-+4522386548}
     ports:
       - "3107:3107"
     networks:
