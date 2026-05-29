@@ -91,10 +91,16 @@ def jenkins_who_am_i() -> str:
     return json.dumps(result)
 
 
+def _job_path(name: str) -> str:
+    """Convert 'folder/job' to '/job/folder/job' for Jenkins API."""
+    parts = name.strip("/").split("/")
+    return "/" + "/".join(f"job/{p}" for p in parts)
+
+
 @mcp.tool()
 def jenkins_get_job(name: str) -> str:
     """Get a Jenkins job by its full path (e.g. 'folder/job-name')."""
-    path = f"/job/{name}/api/json"
+    path = f"{_job_path(name)}/api/json"
     result = _request("GET", path)
     if result["ok"] and isinstance(result["response"], dict):
         body = result["response"]
@@ -122,7 +128,7 @@ def jenkins_get_job(name: str) -> str:
 def jenkins_get_jobs(folder: str = "", filter_str: str = "") -> str:
     """List Jenkins jobs. Optionally filter by folder path and/or name substring."""
     if folder:
-        path = f"/job/{folder}/api/json"
+        path = f"{_job_path(folder)}/api/json"
     else:
         path = "/api/json"
 
@@ -150,7 +156,7 @@ def jenkins_get_jobs(folder: str = "", filter_str: str = "") -> str:
 @mcp.tool()
 def jenkins_get_build(name: str, number: int) -> str:
     """Get a build by job name (full path) and build number."""
-    path = f"/job/{name}/{number}/api/json"
+    path = f"{_job_path(name)}/{number}/api/json"
     result = _request("GET", path)
     if result["ok"] and isinstance(result["response"], dict):
         body = result["response"]
@@ -176,7 +182,7 @@ def jenkins_get_build(name: str, number: int) -> str:
 @mcp.tool()
 def jenkins_get_build_log(name: str, number: int, start: int = 0) -> str:
     """Get build log text. Use start param to paginate (byte offset)."""
-    path = f"/job/{name}/{number}/logText/progressiveText"
+    path = f"{_job_path(name)}/{number}/logText/progressiveText"
     result = _request("GET", path, params={"start": str(start)})
     if result["ok"]:
         text = result["response"] if isinstance(result["response"], str) else ""
@@ -193,8 +199,9 @@ def jenkins_get_build_log(name: str, number: int, start: int = 0) -> str:
 @mcp.tool()
 def jenkins_trigger_build(name: str, parameters: Optional[str] = None) -> str:
     """Trigger a Jenkins build. Optionally provide JSON parameters string (e.g. '{\"key\": \"value\"}')."""
+    base = _job_path(name)
     if parameters:
-        path = f"/job/{name}/buildWithParameters"
+        path = f"{base}/buildWithParameters"
         parsed_params: Dict[str, Any] = {}
         if parameters:
             try:
@@ -203,7 +210,7 @@ def jenkins_trigger_build(name: str, parameters: Optional[str] = None) -> str:
                 return json.dumps({"ok": False, "status_code": 0, "error": f"Invalid JSON parameters: {e}"})
         result = _request("POST", path, params=parsed_params)
     else:
-        path = f"/job/{name}/build"
+        path = f"{base}/build"
         result = _request("POST", path)
 
     if result["status_code"] in (200, 201, 302):
