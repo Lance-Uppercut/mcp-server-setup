@@ -68,6 +68,11 @@
       "type": "remote",
       "url": "http://portainer-production1:3116/sse",
       "enabled": false
+    },
+    "jenkins": {
+      "type": "remote",
+      "url": "http://jenkins-mcp:3117/sse",
+      "enabled": true
     }
   }
 }

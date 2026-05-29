@@ -137,6 +137,7 @@ check_endpoint "google" "http://${HOST}:3103/sse"
 check_endpoint "todoist" "http://${HOST}:3104/sse"
 check_endpoint "asus-router" "http://${HOST}:3105/sse"
 check_endpoint "playwright" "http://${HOST}:3106/sse"
+check_endpoint "jenkins" "http://${HOST}:3117/sse"
 
 check_tools "yahoo" "http://${HOST}:3101/mcp/sse"
 check_tools "alertmanager" "http://${HOST}:8001/sse"
@@ -146,6 +147,7 @@ check_tools "google" "http://${HOST}:3103/sse"
 check_tools "todoist" "http://${HOST}:3104/sse"
 check_tools "asus-router" "http://${HOST}:3105/sse"
 check_tools "playwright" "http://${HOST}:3106/sse"
+check_tools "jenkins" "http://${HOST}:3117/sse"
 
 echo "=== MCP verify summary: PASS=$PASS FAIL=$FAIL WARN=$WARN ==="
 if [[ $FAIL -gt 0 ]]; then
