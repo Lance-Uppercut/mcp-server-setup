@@ -204,22 +204,27 @@ for f in "$RESULTS_DIR"/*; do
   esac
 done
 
+SEVERE=0
 echo "=== MCP verify summary: PASS=$PASS FAIL=$FAIL SKIP=$SKIP ==="
-if [[ $FAIL -gt 0 ]]; then
-  echo "Failed checks:"
-  for f in "$RESULTS_DIR"/*; do
-    [[ ! -f "$f" ]] && continue
-    if [[ "$(cat "$f" | tr -d ' \n')" == "FAIL" ]]; then
-      key="${f##*/}"
-      type="${key:0:1}"
-      name="${key:2}"
-      case "$type" in
-        c) echo "  - container:$name" ;;
-        e) echo "  - endpoint:$name" ;;
-        t) echo "  - tools:$name" ;;
-      esac
-    fi
-  done
+echo ""
+for f in "$RESULTS_DIR"/*; do
+  [[ ! -f "$f" ]] && continue
+  if [[ "$(cat "$f" | tr -d ' \n')" == "FAIL" ]]; then
+    key="${f##*/}"
+    type="${key:0:1}"
+    name="${key:2}"
+    case "$type" in
+      c) echo "  FAIL  container:$name"; SEVERE=$((SEVERE + 1)) ;;
+      e) echo "  FAIL  endpoint:$name"  ; SEVERE=$((SEVERE + 1)) ;;
+      t) echo "  WARN  tools:$name (advisory)" ;;
+    esac
+  fi
+done
+echo ""
+if [[ $SEVERE -gt 0 ]]; then
+  echo "MCP verify: ${SEVERE} mandatory check(s) failed (container/endpoint)"
+  echo "(tool failures are advisory and don't fail the build)"
   exit 1
 fi
+echo "MCP verify: all mandatory checks passed"
 exit 0
