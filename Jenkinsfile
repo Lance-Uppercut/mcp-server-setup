@@ -46,7 +46,8 @@ pipeline {
                         [imageName: 'signal-mcp', context: './servers/signal-mcp'],
                         [imageName: 'todoist-mcp', context: './servers/todoist-mcp'],
                         [imageName: 'asus-router-mcp', context: './servers/asus-router-mcp'],
-                        [imageName: 'portainer-mcp', context: './servers/portainer-mcp']
+                        [imageName: 'portainer-mcp', context: './servers/portainer-mcp'],
+                        [imageName: 'jenkins-mcp', context: './servers/jenkins-mcp']
                     ]
                     
                     echo "Services to build: ${services.collect { it.imageName }.join(', ')}"
@@ -209,6 +210,7 @@ PY
                         sh "docker stack services ${stackName}"
 
                         echo "Deployment complete!"
+                        sleep 15
                     }
                 }
             }
@@ -218,7 +220,7 @@ PY
             steps {
                 script {
                     sh 'chmod +x ./scripts/verify-mcp-servers.sh'
-                    sh './scripts/verify-mcp-servers.sh --host localhost'
+                    sh './scripts/verify-mcp-servers.sh'
                 }
             }
         }

@@ -300,6 +300,23 @@ services:
     networks:
       - mcp-network
 
+  # Jenkins MCP Server (FastMCP SSE wrapper, bypasses Jenkins MCP plugin)
+  jenkins-mcp:
+    image: registry:5000/offbeat-iot/jenkins-mcp:latest
+    build:
+      context: ./servers/jenkins-mcp
+      dockerfile: Dockerfile
+    container_name: jenkins-mcp
+    environment:
+      - JENKINS_URL=${JENKINS_URL}
+      - JENKINS_USERNAME=${JENKINS_USERNAME}
+      - JENKINS_API_TOKEN=${JENKINS_API_TOKEN}
+      - MCP_PORT=3117
+    ports:
+      - "3117:3117"
+    networks:
+      - mcp-network
+
 networks:
   mcp-network:
     name: sentinel_sentinel-network

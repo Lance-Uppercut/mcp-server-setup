@@ -48,6 +48,9 @@ services:
   playwright-mcp:
     deploy:
       <<: *deploy-defaults
+  jenkins-mcp:
+    deploy:
+      <<: *deploy-defaults
   portainer-build1:
     deploy:
       <<: *deploy-defaults
