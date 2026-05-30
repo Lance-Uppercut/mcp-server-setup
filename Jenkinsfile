@@ -219,7 +219,7 @@ PY
             steps {
                 script {
                     sh 'chmod +x ./scripts/verify-mcp-servers.sh'
-                    sh './scripts/verify-mcp-servers.sh --host localhost'
+                    sh './scripts/verify-mcp-servers.sh'
                 }
             }
         }
