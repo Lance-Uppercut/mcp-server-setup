@@ -21,7 +21,7 @@ services:
       - mcp-network
 
   alertmanager-mcp:
-    image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
+    image: ghcr.io/ntk148v/alertmanager-mcp-server:1.1.0
     environment:
       - ALERTMANAGER_URL=${ALERTMANAGER_URL}
       - ALERTMANAGER_USERNAME=${ALERTMANAGER_USERNAME:-}
