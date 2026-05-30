@@ -3,7 +3,7 @@ FROM python:3.12-slim
 WORKDIR /app
 
 RUN pip install --no-cache-dir \
-    mcp[cli] \
+    "mcp[cli]>=1.27.2" \
     httpx
 
 COPY server.py .
