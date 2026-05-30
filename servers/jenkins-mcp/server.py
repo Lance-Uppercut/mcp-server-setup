@@ -5,6 +5,7 @@ from typing import Any, Dict, Optional
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.transport_security import TransportSecuritySettings
 
 
 JENKINS_URL = os.environ.get("JENKINS_URL", "http://localhost:8080").rstrip("/")
@@ -254,4 +255,7 @@ def jenkins_get_queue_item(id: int) -> str:
 if __name__ == "__main__":
     mcp.settings.host = MCP_HOST
     mcp.settings.port = MCP_PORT
+    mcp.settings.transport_security = TransportSecuritySettings(
+        enable_dns_rebinding_protection=False
+    )
     mcp.run(transport="sse")

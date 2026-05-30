@@ -210,6 +210,7 @@ PY
                         sh "docker stack services ${stackName}"
 
                         echo "Deployment complete!"
+                        sleep 15
                     }
                 }
             }
