@@ -14,10 +14,53 @@ server = Server("asus-router-mcp")
 TRANSPORT_MODE = os.environ.get("TRANSPORT_MODE", "stdio").lower()
 PORT = int(os.environ.get("PORT", "3105"))
 
-ROUTER_HOST = os.environ.get("ROUTER_HOST", "192.168.1.1")
+ROUTER_HOST = os.environ.get("ROUTER_HOST", "").strip()
+ROUTER_HOSTS = os.environ.get("ROUTER_HOSTS", "").strip()
+ROUTER_PROFILE = os.environ.get("ROUTER_PROFILE", "default").strip()
 ROUTER_USERNAME = os.environ.get("ROUTER_USERNAME", "admin")
 ROUTER_PASSWORD = os.environ.get("ROUTER_PASSWORD", "")
 USE_SSL = os.environ.get("USE_SSL", "true").lower() == "true"
+
+
+def parse_router_hosts(raw_hosts: str) -> dict:
+    hosts = {}
+    if not raw_hosts:
+        return hosts
+
+    for entry in raw_hosts.split(","):
+        item = entry.strip()
+        if not item:
+            continue
+        if "=" not in item:
+            raise ValueError(
+                f"Invalid ROUTER_HOSTS entry '{item}'. Expected profile=host format."
+            )
+        profile, host = item.split("=", 1)
+        profile = profile.strip()
+        host = host.strip()
+        if not profile or not host:
+            raise ValueError(
+                f"Invalid ROUTER_HOSTS entry '{item}'. Profile and host are required."
+            )
+        hosts[profile] = host
+    return hosts
+
+
+def resolve_router_host() -> str:
+    if ROUTER_HOST:
+        return ROUTER_HOST
+
+    hosts_by_profile = parse_router_hosts(ROUTER_HOSTS)
+    if ROUTER_PROFILE in hosts_by_profile:
+        return hosts_by_profile[ROUTER_PROFILE]
+
+    raise RuntimeError(
+        "ROUTER_HOST is not configured. Set ROUTER_HOST directly or define ROUTER_HOSTS "
+        "(profile=host,profile=host) with a matching ROUTER_PROFILE."
+    )
+
+
+TARGET_ROUTER_HOST = None
 
 try:
     from asusrouter import AsusRouter, AsusData
@@ -37,6 +80,7 @@ router_connected = False
 
 async def get_router():
     global router_instance, router_connected
+    global TARGET_ROUTER_HOST
     
     if router_instance and router_connected:
         try:
@@ -48,9 +92,12 @@ async def get_router():
     
     if not ASUSROUTER_AVAILABLE:
         raise RuntimeError("asusrouter library not available")
+
+    if TARGET_ROUTER_HOST is None:
+        TARGET_ROUTER_HOST = resolve_router_host()
     
     router_instance = AsusRouter(
-        hostname=ROUTER_HOST,
+        hostname=TARGET_ROUTER_HOST,
         username=ROUTER_USERNAME,
         password=ROUTER_PASSWORD,
         use_ssl=USE_SSL,
@@ -58,7 +105,7 @@ async def get_router():
     
     await router_instance.async_connect()
     router_connected = True
-    print(f"Connected to ASUS router at {ROUTER_HOST}", file=__import__('sys').stderr)
+    print(f"Connected to ASUS router at {TARGET_ROUTER_HOST}", file=__import__('sys').stderr)
     return router_instance
 
 @server.list_tools()

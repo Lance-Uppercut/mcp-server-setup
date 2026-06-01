@@ -132,7 +132,9 @@ services:
   asus-router-mcp:
     image: registry:5000/offbeat-iot/asus-router-mcp:latest
     environment:
-      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_HOST=${ROUTER_HOST}
+      - ROUTER_HOSTS=${ROUTER_HOSTS:-}
+      - ROUTER_PROFILE=${ROUTER_PROFILE:-default}
       - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
       - ROUTER_PASSWORD=${ROUTER_PASSWORD}
       - USE_SSL=${USE_SSL:-true}
