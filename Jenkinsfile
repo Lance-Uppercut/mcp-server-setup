@@ -81,13 +81,13 @@ pipeline {
                 stage('Deploy stack') {
                     steps {
                         sh '''
-                            HOST_MCP_DATA_DIR="/srv/mcp-servers-data"
+                            HOST_MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data"
                             docker run --rm -v "${HOST_MCP_DATA_DIR}:/host-data" alpine:3.20 \
                                 sh -c 'mkdir -p /host-data/google-workspace /host-data/tado /host-data/signal-cli /host-data/playwright'
                         '''
                         sh '''
                             for attempt in 1 2 3; do
-                                if MCP_DATA_DIR="/srv/mcp-servers-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers; then
+                                if MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers; then
                                     exit 0
                                 fi
 
