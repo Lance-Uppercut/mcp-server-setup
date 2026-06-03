@@ -85,9 +85,20 @@ pipeline {
                             docker run --rm -v "${HOST_MCP_DATA_DIR}:/host-data" alpine:3.20 \
                                 sh -c 'mkdir -p /host-data/google-workspace /host-data/tado /host-data/signal-cli /host-data/playwright'
                         '''
-                        retry(2) {
-                            sh 'MCP_DATA_DIR="/srv/mcp-servers-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
-                        }
+                        sh '''
+                            for attempt in 1 2 3; do
+                                if MCP_DATA_DIR="/srv/mcp-servers-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers; then
+                                    exit 0
+                                fi
+
+                                if [ "$attempt" -lt 3 ]; then
+                                    echo "Deploy attempt $attempt failed; waiting 20 seconds before retry"
+                                    sleep 20
+                                fi
+                            done
+
+                            exit 1
+                        '''
                     }
                 }
                 stage('Verify MCP servers') {
