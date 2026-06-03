@@ -102,8 +102,16 @@ endpoint_result() {
 check_endpoint() {
   local name="$1" url="$2"
   local retries=2 delay_seconds=2 attempt=1 http_code=""
+  local -a curl_args=(-sS -o /dev/null -w '%{http_code}' -H 'Accept: text/event-stream' --max-time 4)
+
+  # alertmanager-mcp rejects requests addressed by raw node IP unless the
+  # Host header matches a local endpoint name.
+  if [[ "$name" == "alertmanager" && "$HOST" != "localhost" && "$HOST" != "127.0.0.1" ]]; then
+    curl_args+=(-H 'Host: localhost')
+  fi
+
   while [[ $attempt -le $retries ]]; do
-    http_code="$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: text/event-stream' --max-time 4 "$url" 2>/dev/null || true)"
+    http_code="$(curl "${curl_args[@]}" "$url" 2>/dev/null || true)"
     if [[ "$http_code" == "200" ]]; then
       endpoint_result "PASS" "$name" "$url" ""
       return 0
