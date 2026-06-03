@@ -22,7 +22,7 @@ pipeline {
                 }
                 stage('Build MCP Servers') {
                     steps {
-                        sh '''
+                        sh ''
                             docker compose build \
                                 yahoo-mail-mcp \
                                 google-workspace-mcp \
@@ -37,12 +37,12 @@ pipeline {
                                 portainer-tools1 \
                                 portainer-production1 \
                                 jenkins-mcp
-                        '''
+                        ''
                     }
                 }
                 stage('Push Docker images') {
                     steps {
-                        sh '''
+                        sh ''
                             docker compose push \
                                 yahoo-mail-mcp \
                                 google-workspace-mcp \
@@ -57,7 +57,7 @@ pipeline {
                                 portainer-tools1 \
                                 portainer-production1 \
                                 jenkins-mcp
-                        '''
+                        ''
                     }
                 }
             }
@@ -72,7 +72,9 @@ pipeline {
                 }
                 stage('Deploy stack') {
                     steps {
-                        sh 'docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
+                        retry(2) {
+                            sh 'docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
+                        }
                     }
                 }
                 stage('Verify MCP servers') {
