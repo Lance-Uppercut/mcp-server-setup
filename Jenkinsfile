@@ -72,7 +72,7 @@ pipeline {
                 }
                 stage('Deploy stack') {
                     steps {
-                        sh 'docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
+                        sh 'docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
                     }
                 }
                 stage('Verify MCP servers') {
