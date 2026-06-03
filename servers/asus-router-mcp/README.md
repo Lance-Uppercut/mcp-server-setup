@@ -16,12 +16,20 @@ Configure via environment variables:
 
 | Variable | Default | Description |
 |----------|---------|-------------|
-| `ROUTER_HOST` | `192.168.1.1` | Router IP address |
+| `ROUTER_HOST` | (required) | Router IP/hostname for a single ASUS target |
+| `ROUTER_HOSTS` | (optional) | Comma-separated profile map, e.g. `build1=192.168.1.2,build2=192.168.1.18` |
+| `ROUTER_PROFILE` | `default` | Active profile key used with `ROUTER_HOSTS` when `ROUTER_HOST` is unset |
 | `ROUTER_USERNAME` | `admin` | Router admin username |
 | `ROUTER_PASSWORD` | (none) | Router admin password |
 | `USE_SSL` | `true` | Use HTTPS for connection |
 | `TRANSPORT_MODE` | `sse` | Transport mode (stdio or sse) |
 | `MCP_PORT` | `3105` | Port for MCP server |
+
+Notes:
+
+- `ROUTER_HOST` has no implicit default and must be set per environment.
+- Do not assume `192.168.1.1` is ASUS; in this network it is an upstream gateway.
+- Known ASUS management IP examples: `192.168.1.2`, `192.168.1.18`.
 
 ## Available Tools
 
@@ -44,6 +52,8 @@ One command (unit + live smoke):
 ```bash
 ./scripts/verify-asus-mcp.sh
 ```
+
+Preflight now fails fast when the host is reachable but does not expose an ASUS login signature.
 
 Run unit tests (mapping behavior):
 

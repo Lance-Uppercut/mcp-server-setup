@@ -21,7 +21,7 @@ services:
       - mcp-network
 
   alertmanager-mcp:
-    image: ghcr.io/ntk148v/alertmanager-mcp-server:latest
+    image: ghcr.io/ntk148v/alertmanager-mcp-server:1.1.0
     environment:
       - ALERTMANAGER_URL=${ALERTMANAGER_URL}
       - ALERTMANAGER_USERNAME=${ALERTMANAGER_USERNAME:-}
@@ -169,6 +169,23 @@ services:
     networks:
       - mcp-network
 
+  jenkins-mcp:
+    image: registry:5000/offbeat-iot/jenkins-mcp:latest
+    environment:
+      - JENKINS_URL=${JENKINS_URL}
+      - JENKINS_USERNAME=${JENKINS_USERNAME}
+      - JENKINS_API_TOKEN=${JENKINS_API_TOKEN}
+      - MCP_PORT=3117
+    ports:
+      - target: 3117
+        published: 3117
+        protocol: tcp
+        mode: ingress
+    extra_hosts:
+      - "monitor:192.168.1.60"
+    networks:
+      - mcp-network
+
   portainer-build1:
     image: registry:5000/offbeat-iot/portainer-mcp:latest
     environment:
@@ -259,5 +276,5 @@ services:
 
 networks:
   mcp-network:
-    name: sentinel_sentinel-network
+    name: sentinel_sentinel-swarm-network
     external: true

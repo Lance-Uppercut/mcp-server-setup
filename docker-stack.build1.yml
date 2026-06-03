@@ -27,6 +27,7 @@ services:
   alertmanager-mcp:
     deploy:
       <<: *deploy-defaults
+      replicas: ${ALERTMANAGER_MCP_REPLICAS:-0}
   google-workspace-mcp:
     deploy:
       <<: *deploy-defaults
@@ -46,6 +47,9 @@ services:
     deploy:
       <<: *deploy-defaults
   playwright-mcp:
+    deploy:
+      <<: *deploy-defaults
+  jenkins-mcp:
     deploy:
       <<: *deploy-defaults
   portainer-build1:
