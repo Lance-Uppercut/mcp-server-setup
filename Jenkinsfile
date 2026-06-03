@@ -72,9 +72,12 @@ pipeline {
                 }
                 stage('Deploy stack') {
                     steps {
-                        sh 'mkdir -p data/google-workspace data/tado data/signal-cli data/playwright'
+                        sh '''
+                            MCP_DATA_DIR="${WORKSPACE}/data"
+                            mkdir -p "${MCP_DATA_DIR}/google-workspace" "${MCP_DATA_DIR}/tado" "${MCP_DATA_DIR}/signal-cli" "${MCP_DATA_DIR}/playwright"
+                        '''
                         retry(2) {
-                            sh 'docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
+                            sh 'MCP_DATA_DIR="${WORKSPACE}/data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
                         }
                     }
                 }
