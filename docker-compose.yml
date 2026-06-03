@@ -187,7 +187,9 @@ services:
       context: ./servers/asus-router-mcp
       dockerfile: Dockerfile
     environment:
-      - ROUTER_HOST=${ROUTER_HOST:-192.168.1.1}
+      - ROUTER_HOST=${ROUTER_HOST}
+      - ROUTER_HOSTS=${ROUTER_HOSTS:-}
+      - ROUTER_PROFILE=${ROUTER_PROFILE:-default}
       - ROUTER_USERNAME=${ROUTER_USERNAME:-admin}
       - ROUTER_PASSWORD=${ROUTER_PASSWORD}
       - USE_SSL=${USE_SSL:-true}
@@ -196,6 +198,24 @@ services:
       - MCP_PORT=3105
     ports:
       - "3105:3105"
+    networks:
+      - mcp-network
+
+  asus-router-mcp-secondary:
+    image: registry:5000/offbeat-iot/asus-router-mcp:latest
+    container_name: asus-router-mcp-secondary
+    profiles: ["multi-asus"]
+    environment:
+      - ROUTER_HOST=${ROUTER_HOST_SECONDARY}
+      - ROUTER_USERNAME=${ROUTER_USERNAME_SECONDARY:-admin}
+      - ROUTER_PASSWORD=${ROUTER_PASSWORD_SECONDARY}
+      - USE_SSL=${USE_SSL_SECONDARY:-true}
+      - TRANSPORT_MODE=sse
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3205
+      - PORT=3205
+    ports:
+      - "3205:3205"
     networks:
       - mcp-network
 

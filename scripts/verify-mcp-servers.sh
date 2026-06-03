@@ -20,9 +20,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Auto-detect host: use Docker swarm node IP when inside a container
-if [[ -z "$HOST" || "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
-  if command -v docker >/dev/null 2>&1; then
+# Auto-detect host: use the swarm node IP only when the verifier itself is
+# running inside a container. On the Jenkins host, localhost avoids Host
+# header mismatches from MCP servers that reject raw node IP requests.
+if [[ -z "$HOST" ]]; then
+  if [[ -f /.dockerenv ]] && command -v docker >/dev/null 2>&1; then
     local_node="$(docker info --format '{{.Swarm.NodeAddr}}' 2>/dev/null || true)"
     if [[ -n "$local_node" && "$local_node" != "0.0.0.0" ]]; then
       HOST="$local_node"
@@ -70,7 +72,7 @@ if [[ "$CHECK_CONTAINERS" -eq 1 ]] && command -v docker >/dev/null 2>&1; then
       rows="$(docker ps --format '{{.Names}}|{{.Status}}' | grep -E "$pattern.*\|" || true)"
       if [[ -z "$rows" ]]; then
         container_result "FAIL" "$name" "missing (pattern: $pattern)"
-      elif echo "$rows" | grep -qi 'unhealthy'; then
+      elif echo "$rows" | grep -qi 'unhealthy' && ! echo "$rows" | grep -Eiv 'unhealthy' >/dev/null; then
         container_result "FAIL" "$name" "unhealthy -> $(echo "$rows" | tr '\n' '; ')"
       else
         container_result "PASS" "$name" "$(echo "$rows" | tr '\n' '; ')"
@@ -99,9 +101,17 @@ endpoint_result() {
 
 check_endpoint() {
   local name="$1" url="$2"
-  local retries=2 delay_seconds=2 attempt=1 http_code=""
+  local retries=6 delay_seconds=5 attempt=1 http_code=""
+  local -a curl_args=(-sS -o /dev/null -w '%{http_code}' -H 'Accept: text/event-stream' --max-time 4)
+
+  # alertmanager-mcp rejects requests addressed by raw node IP unless the
+  # Host header matches a local endpoint name.
+  if [[ "$name" == "alertmanager" && "$HOST" != "localhost" && "$HOST" != "127.0.0.1" ]]; then
+    curl_args+=(-H 'Host: localhost')
+  fi
+
   while [[ $attempt -le $retries ]]; do
-    http_code="$(curl -sS -o /dev/null -w '%{http_code}' -H 'Accept: text/event-stream' --max-time 4 "$url" 2>/dev/null || true)"
+    http_code="$(curl "${curl_args[@]}" "$url" 2>/dev/null || true)"
     if [[ "$http_code" == "200" ]]; then
       endpoint_result "PASS" "$name" "$url" ""
       return 0

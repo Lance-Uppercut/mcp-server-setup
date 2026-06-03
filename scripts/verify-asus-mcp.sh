@@ -36,6 +36,28 @@ if [[ "$HTTPS_OK" -eq 0 && "$HTTP_OK" -eq 0 ]]; then
   exit 2
 fi
 
+ASUS_SIGNATURE=""
+if [[ "$HTTPS_OK" -eq 1 ]]; then
+  ASUS_SIGNATURE="$(curl -kfsS --connect-timeout 3 --max-time 6 "https://$ROUTER_HOST/" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+fi
+
+if [[ -z "$ASUS_SIGNATURE" && "$HTTP_OK" -eq 1 ]]; then
+  ASUS_SIGNATURE="$(curl -fsS --connect-timeout 3 --max-time 6 "http://$ROUTER_HOST/" 2>/dev/null | tr '[:upper:]' '[:lower:]')"
+fi
+
+if [[ -z "$ASUS_SIGNATURE" ]]; then
+  echo "Failed to fetch router login page content from $ROUTER_HOST"
+  exit 2
+fi
+
+if [[ "$ASUS_SIGNATURE" != *"asus"* && "$ASUS_SIGNATURE" != *"asuswrt"* && "$ASUS_SIGNATURE" != *"router.asus.com"* ]]; then
+  echo "Preflight failed: $ROUTER_HOST is reachable but does not look like an ASUS management UI."
+  echo "Set ROUTER_HOST to an ASUS router IP (example: 192.168.1.2 or 192.168.1.18)."
+  exit 2
+fi
+
+echo "Preflight: ASUS login signature detected on $ROUTER_HOST"
+
 if [[ "$USE_SSL" == "false" && "$HTTP_OK" -eq 0 && "$HTTPS_OK" -eq 1 ]]; then
   echo "Warning: .env has USE_SSL=false but router only responds on HTTPS."
   echo "Set USE_SSL=true in .env and rerun."

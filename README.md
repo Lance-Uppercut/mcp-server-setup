@@ -38,6 +38,17 @@ docker compose up -d yahoo-mail-mcp alertmanager-mcp
 
 If you only need the ASUS Router MCP server, use the dedicated compose file:
 
+Before starting, set an explicit ASUS host in `.env`:
+
+```bash
+ROUTER_HOST=192.168.1.2
+# optional profile map when switching targets
+ROUTER_HOSTS=build1=192.168.1.2,build2=192.168.1.18
+ROUTER_PROFILE=build1
+```
+
+`192.168.1.1` is often an upstream gateway and should not be assumed to be an ASUS UI.
+
 ```bash
 # Build and run only ASUS Router MCP
 docker compose -f docker-compose.asus.yml up -d --build
@@ -47,6 +58,14 @@ curl http://localhost:3105/sse
 
 # Stop it
 docker compose -f docker-compose.asus.yml down
+```
+
+To run two ASUS MCP instances (primary + secondary) in parallel:
+
+```bash
+ROUTER_HOST=192.168.1.2
+ROUTER_HOST_SECONDARY=192.168.1.18
+docker compose -f docker-compose.asus.yml --profile multi-asus up -d --build
 ```
 
 ## OpenCode CLI
@@ -176,6 +195,11 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
    ```
 
 2. Fill in your credentials in `.env`
+
+   Required for ASUS MCP:
+
+   - `ROUTER_HOST` (or `ROUTER_HOSTS` + `ROUTER_PROFILE`)
+   - `ROUTER_PASSWORD`
 
 3. Configure SSH servers in `ssh/config`:
    ```bash
