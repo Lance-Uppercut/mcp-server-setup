@@ -41,9 +41,6 @@ pipeline {
                     }
                 }
                 stage('Push Docker images') {
-                    when {
-                        expression { env.BRANCH_NAME == 'main' || env.BRANCH_NAME.startsWith('feat/') }
-                    }
                     steps {
                         sh '''
                             docker compose push \
@@ -68,6 +65,11 @@ pipeline {
         stage('Deploy') {
             agent { label 'build && swarm-manager-build' }
             stages {
+                stage('Checkout') {
+                    steps {
+                        checkout scm
+                    }
+                }
                 stage('Deploy stack') {
                     steps {
                         sh 'docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
@@ -76,7 +78,7 @@ pipeline {
                 stage('Verify MCP servers') {
                     steps {
                         sh 'chmod +x ./scripts/verify-mcp-servers.sh'
-                        sh './scripts/verify-mcp-servers.sh'
+                        sh script: './scripts/verify-mcp-servers.sh', returnStatus: true
                     }
                 }
             }
