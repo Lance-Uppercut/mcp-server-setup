@@ -18,6 +18,10 @@ pipeline {
                 stage('Checkout') {
                     steps {
                         checkout scm
+                        script {
+                            env.BUILD_NODE_NAME = env.NODE_NAME
+                            currentBuild.displayName = "#${env.BUILD_NUMBER} [build:${env.BUILD_NODE_NAME}]"
+                        }
                     }
                 }
                 stage('Build MCP Servers') {
@@ -68,6 +72,10 @@ pipeline {
                 stage('Checkout') {
                     steps {
                         checkout scm
+                        script {
+                            env.DEPLOY_NODE_NAME = env.NODE_NAME
+                            currentBuild.displayName = "#${env.BUILD_NUMBER} [build:${env.BUILD_NODE_NAME ?: '-'} deploy:${env.DEPLOY_NODE_NAME}]"
+                        }
                     }
                 }
                 stage('Deploy stack') {
