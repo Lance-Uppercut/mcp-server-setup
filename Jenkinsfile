@@ -72,6 +72,7 @@ pipeline {
                 }
                 stage('Deploy stack') {
                     steps {
+                        sh 'mkdir -p data/google-workspace data/tado data/signal-cli data/playwright'
                         retry(2) {
                             sh 'docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
                         }
