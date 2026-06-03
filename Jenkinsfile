@@ -3,9 +3,7 @@
 pipeline {
     agent none
     environment {
-        DOCKER_REGISTRY = 'ioffearegistry.azurecr.io'
-        IMAGE_TAG = "${env.BRANCH_NAME}-${env.BUILD_NUMBER}"
-        REPO_NAME = 'mcp-server-setup'
+        DOCKER_REGISTRY = 'registry:5000'
     }
 
     options {
@@ -16,9 +14,6 @@ pipeline {
     stages {
         stage('Build and Push Docker images') {
             agent { label 'build' }
-            environment {
-                DOCKER_BUILDKIT = '1'
-            }
             stages {
                 stage('Checkout') {
                     steps {
@@ -28,8 +23,20 @@ pipeline {
                 stage('Build MCP Servers') {
                     steps {
                         sh '''
-                            docker compose build mcp-supervisor
-                            docker compose build mcp-supervisor-test
+                            docker compose build \
+                                yahoo-mail-mcp \
+                                google-workspace-mcp \
+                                tado-mcp \
+                                signal-mcp \
+                                todoist-mcp \
+                                asus-router-mcp \
+                                portainer-build1 \
+                                portainer-build2 \
+                                portainer-monitor \
+                                portainer-observability1 \
+                                portainer-tools1 \
+                                portainer-production1 \
+                                jenkins-mcp
                         '''
                     }
                 }
@@ -39,9 +46,20 @@ pipeline {
                     }
                     steps {
                         sh '''
-                            docker login "${DOCKER_REGISTRY}" -u "$(vault kv get -field=username "${DOCKER_REGISTRY}")" -p "$(vault kv get -field=password "${DOCKER_REGISTRY}")"
-                            docker compose push mcp-supervisor
-                            docker compose push mcp-supervisor-test
+                            docker compose push \
+                                yahoo-mail-mcp \
+                                google-workspace-mcp \
+                                tado-mcp \
+                                signal-mcp \
+                                todoist-mcp \
+                                asus-router-mcp \
+                                portainer-build1 \
+                                portainer-build2 \
+                                portainer-monitor \
+                                portainer-observability1 \
+                                portainer-tools1 \
+                                portainer-production1 \
+                                jenkins-mcp
                         '''
                     }
                 }
@@ -51,16 +69,14 @@ pipeline {
             agent { label 'build && swarm-manager-build' }
             stages {
                 stage('Deploy stack') {
-                    environment {
-                        MCP_VERSION = "${IMAGE_TAG}"
-                    }
                     steps {
-                        sh 'MCP_VERSION="${MCP_VERSION}" docker stack deploy -c docker-compose.yml -c docker-compose.prod.yml mcp'
+                        sh 'docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
                     }
                 }
                 stage('Verify MCP servers') {
                     steps {
-                        sh 'sleep 5 && docker service ls --filter name=mcp_'
+                        sh 'chmod +x ./scripts/verify-mcp-servers.sh'
+                        sh './scripts/verify-mcp-servers.sh'
                     }
                 }
             }
