@@ -24,6 +24,7 @@ pipeline {
         stage('Build and Push Docker images') {
             agent { label 'build' }
             steps {
+                deleteDir()
                 checkout scm
                 script {
                     def branchName = env.BRANCH_NAME ?: env.GIT_BRANCH ?: env.CHANGE_BRANCH
@@ -68,6 +69,7 @@ pipeline {
             stages {
                 stage('Deploy stack') {
                     steps {
+                        deleteDir()
                         checkout scm
                         script {
                             echo "Deploying MCP servers..."
