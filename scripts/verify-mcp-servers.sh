@@ -20,9 +20,11 @@ while [[ $# -gt 0 ]]; do
   esac
 done
 
-# Auto-detect host: use Docker swarm node IP when inside a container
+# Auto-detect host: use the swarm node IP only when the verifier itself is
+# running inside a container. On the Jenkins host, localhost avoids Host
+# header mismatches from MCP servers that reject raw node IP requests.
 if [[ -z "$HOST" || "$HOST" == "localhost" || "$HOST" == "127.0.0.1" ]]; then
-  if command -v docker >/dev/null 2>&1; then
+  if [[ -f /.dockerenv ]] && command -v docker >/dev/null 2>&1; then
     local_node="$(docker info --format '{{.Swarm.NodeAddr}}' 2>/dev/null || true)"
     if [[ -n "$local_node" && "$local_node" != "0.0.0.0" ]]; then
       HOST="$local_node"
