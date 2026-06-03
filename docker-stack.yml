@@ -59,7 +59,7 @@ services:
         protocol: tcp
         mode: ingress
     volumes:
-      - ${MCP_DATA_DIR:-./data}/google-workspace:/data/google-workspace
+      - ${MCP_DATA_DIR:-/srv/mcp-servers-data}/google-workspace:/data/google-workspace
     networks:
       - mcp-network
 
@@ -74,7 +74,7 @@ services:
         protocol: tcp
         mode: ingress
     volumes:
-      - ${MCP_DATA_DIR:-./data}/tado:/data
+      - ${MCP_DATA_DIR:-/srv/mcp-servers-data}/tado:/data
     networks:
       - mcp-network
 
@@ -84,7 +84,7 @@ services:
       - MODE=${SIGNAL_CLI_MODE:-json-rpc-native}
       - RECEIVE_WEBHOOK_URL=${SIGNAL_RECEIVE_WEBHOOK_URL:-http://build1:18442/api/signal/webhook}
     volumes:
-      - ${MCP_DATA_DIR:-./data}/signal-cli:/home/.local/share/signal-cli
+      - ${MCP_DATA_DIR:-/srv/mcp-servers-data}/signal-cli:/home/.local/share/signal-cli
     ports:
       - target: 8080
         published: 8080
@@ -167,7 +167,7 @@ services:
         protocol: tcp
         mode: ingress
     volumes:
-      - ${MCP_DATA_DIR:-./data}/playwright:/home/user
+      - ${MCP_DATA_DIR:-/srv/mcp-servers-data}/playwright:/home/user
     networks:
       - mcp-network
 

@@ -81,11 +81,12 @@ pipeline {
                 stage('Deploy stack') {
                     steps {
                         sh '''
-                            MCP_DATA_DIR="${WORKSPACE}/data"
-                            mkdir -p "${MCP_DATA_DIR}/google-workspace" "${MCP_DATA_DIR}/tado" "${MCP_DATA_DIR}/signal-cli" "${MCP_DATA_DIR}/playwright"
+                            HOST_MCP_DATA_DIR="/srv/mcp-servers-data"
+                            docker run --rm -v "${HOST_MCP_DATA_DIR}:/host-data" alpine:3.20 \
+                                sh -c 'mkdir -p /host-data/google-workspace /host-data/tado /host-data/signal-cli /host-data/playwright'
                         '''
                         retry(2) {
-                            sh 'MCP_DATA_DIR="${WORKSPACE}/data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
+                            sh 'MCP_DATA_DIR="/srv/mcp-servers-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers'
                         }
                     }
                 }
