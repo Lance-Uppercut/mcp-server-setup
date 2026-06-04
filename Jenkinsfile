@@ -17,6 +17,7 @@ pipeline {
             stages {
                 stage('Checkout') {
                     steps {
+                        deleteDir()
                         checkout scm
                         script {
                             env.BUILD_NODE_NAME = env.NODE_NAME
@@ -71,6 +72,7 @@ pipeline {
             stages {
                 stage('Checkout') {
                     steps {
+                        deleteDir()
                         checkout scm
                         script {
                             env.DEPLOY_NODE_NAME = env.NODE_NAME
