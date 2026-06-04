@@ -17,6 +17,7 @@ pipeline {
             stages {
                 stage('Checkout') {
                     steps {
+                        deleteDir()
                         checkout scm
                         script {
                             env.BUILD_NODE_NAME = env.NODE_NAME
@@ -71,6 +72,7 @@ pipeline {
             stages {
                 stage('Checkout') {
                     steps {
+                        deleteDir()
                         checkout scm
                         script {
                             env.DEPLOY_NODE_NAME = env.NODE_NAME
@@ -80,25 +82,37 @@ pipeline {
                 }
                 stage('Deploy stack') {
                     steps {
-                        sh '''
-                            HOST_MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data"
-                            docker run --rm -v "${HOST_MCP_DATA_DIR}:/host-data" alpine:3.20 \
-                                sh -c 'mkdir -p /host-data/google-workspace /host-data/tado /host-data/signal-cli /host-data/playwright'
-                        '''
-                        sh '''
-                            for attempt in 1 2 3; do
-                                if MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers; then
-                                    exit 0
-                                fi
+                        withCredentials([
+                            string(credentialsId: 'mcp-jenkins-url', variable: 'MCP_JENKINS_URL'),
+                            string(credentialsId: 'mcp-jenkins-username', variable: 'MCP_JENKINS_USERNAME'),
+                            string(credentialsId: 'mcp-jenkins-api-token', variable: 'MCP_JENKINS_API_TOKEN')
+                        ]) {
+                            withEnv([
+                                'JENKINS_URL=' + env.MCP_JENKINS_URL,
+                                'JENKINS_USERNAME=' + env.MCP_JENKINS_USERNAME,
+                                'JENKINS_API_TOKEN=' + env.MCP_JENKINS_API_TOKEN
+                            ]) {
+                                sh '''
+                                    HOST_MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data"
+                                    docker run --rm -v "${HOST_MCP_DATA_DIR}:/host-data" alpine:3.20 \
+                                        sh -c 'mkdir -p /host-data/google-workspace /host-data/tado /host-data/signal-cli /host-data/playwright'
+                                '''
+                                sh '''
+                                    for attempt in 1 2 3; do
+                                        if MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data" docker stack deploy --with-registry-auth --prune --detach=false -c docker-stack.yml -c docker-stack.build1.yml mcp-servers; then
+                                            exit 0
+                                        fi
 
-                                if [ "$attempt" -lt 3 ]; then
-                                    echo "Deploy attempt $attempt failed; waiting 20 seconds before retry"
-                                    sleep 20
-                                fi
-                            done
+                                        if [ "$attempt" -lt 3 ]; then
+                                            echo "Deploy attempt $attempt failed; waiting 20 seconds before retry"
+                                            sleep 20
+                                        fi
+                                    done
 
-                            exit 1
-                        '''
+                                    exit 1
+                                '''
+                            }
+                        }
                     }
                 }
                 stage('Verify MCP servers') {
