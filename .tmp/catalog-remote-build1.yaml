@@ -1,0 +1,8 @@
+registry:
+  tadoremote:
+    title: Tado Remote
+    description: Tado remote on build1
+    type: remote
+    remote:
+      url: http://build1:3102/sse
+      transport_type: sse
