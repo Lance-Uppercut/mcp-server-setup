@@ -228,7 +228,7 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 ## Jenkins Deployment Secrets
 
-The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from Jenkins credentials, ensures Docker Swarm is active, and deploys with:
+The Jenkins pipeline binds Jenkins credentials with `withCredentials(...)`, maps them to deploy-time environment variables with `withEnv([...])`, ensures Docker Swarm is active, and deploys with:
 
 1. `docker stack deploy --with-registry-auth --prune -c docker-stack.yml -c docker-stack.build1.yml mcp-servers`
 2. Swarm rolling updates (`parallelism: 1`, `order: start-first`, rollback on failure)
@@ -237,7 +237,7 @@ The Jenkins pipeline renders a temporary `runtime-secrets/runtime.env` file from
 
 This keeps deploys non-disruptive and runs MCP services on the build swarm while pinning workloads to the build1 node.
 
-`runtime-secrets/` is deleted in the pipeline `post` section and is gitignored.
+Any variable exported that way is available to `docker stack deploy`, which then resolves `${...}` expressions in `docker-stack.yml` from that environment.
 
 Create these Jenkins credentials before running the pipeline:
 
@@ -246,6 +246,7 @@ Create these Jenkins credentials before running the pipeline:
 - Secret text: `mcp-jenkins-url`
 - Secret text: `mcp-jenkins-username`
 - Secret text: `mcp-jenkins-api-token`
+- Secret text: `slack-bot-token`
 - Secret text: `mcp-todoist-api-token`
 - Secret text: `mcp-yahoo-email`
 - Secret text: `mcp-yahoo-app-password`
