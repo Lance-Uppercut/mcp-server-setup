@@ -40,6 +40,9 @@ services:
   signal-mcp:
     deploy:
       <<: *deploy-defaults
+  slack-mcp:
+    deploy:
+      <<: *deploy-defaults
   todoist-mcp:
     deploy:
       <<: *deploy-defaults

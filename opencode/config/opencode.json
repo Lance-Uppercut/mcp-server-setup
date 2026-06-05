@@ -34,6 +34,11 @@
       "url": "http://signal-mcp:3107/sse",
       "enabled": false
     },
+    "slack": {
+      "type": "remote",
+      "url": "http://slack-mcp:3108/sse",
+      "enabled": false
+    },
     "asus-router": {
       "type": "remote",
       "url": "http://host.docker.internal:3105/sse",
