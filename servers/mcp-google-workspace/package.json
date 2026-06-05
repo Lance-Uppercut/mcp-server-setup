@@ -21,9 +21,9 @@
   },
   "dependencies": {
     "@modelcontextprotocol/sdk": "latest",
-    "axios": "^1.6.0",
+    "axios": "^1.16.0",
     "dotenv": "^16.0.0",
-    "googleapis": "^133.0.0",
+    "googleapis": "^173.0.0",
     "open": "^11.0.0"
   },
   "devDependencies": {
