@@ -136,25 +136,24 @@ docker compose build jenkins-mcp
 docker compose up -d jenkins-mcp
 
 # Verify SSE endpoint responds
-curl -s http://localhost:3103/sse -H "Accept: text/event-stream" --max-time 3
+curl -s http://localhost:3117/sse -H "Accept: text/event-stream" --max-time 3
 
 # Verify with MCP list (OpenCode shows as connected when SSE endpoint responds)
 docker compose exec opencode opencode mcp list
 ```
 
 **Expected Tools:**
-- `get_all_items` - Get all jobs
-- `get_item` - Get specific job
-- `get_item_config` - Get job config XML
-- `build_item` - Trigger a build
-- `get_all_nodes` - Get all nodes
-- `get_node` - Get specific node
-- `get_queue_item` - Get queue item
-- `get_running_builds` - Get running builds
-- `get_build` - Get build info
-- `get_build_console_tail` - Get console output
-- `stop_build` - Stop a build
-- And many more...
+- `jenkins_ping` - Verify Jenkins connectivity and basic metadata
+- `jenkins_who_am_i` - Return the authenticated Jenkins user
+- `jenkins_get_status` - Report controller health, queue size, and executor state
+- `jenkins_get_jobs` / `jenkins_get_job` - Browse jobs
+- `jenkins_trigger_build` / `jenkins_get_queue_item` - Start builds and inspect queue items
+- `jenkins_get_build` / `jenkins_get_build_log` / `jenkins_search_build_log` - Inspect builds and logs
+- `jenkins_update_build` / `jenkins_rebuild_build` - Update or rerun builds
+- `jenkins_get_replay_scripts` / `jenkins_replay_build` - Access replayable pipeline scripts
+- `jenkins_get_job_scm` / `jenkins_get_build_scm` / `jenkins_get_build_change_sets` - Inspect SCM metadata
+- `jenkins_find_jobs_with_scm_url` - Find jobs by repository URL
+- `jenkins_get_test_results` - Return JUnit test summaries or failing tests
 
 ---
 

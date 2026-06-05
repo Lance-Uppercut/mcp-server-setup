@@ -16,7 +16,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | ASUS Router           | Custom Node.js MCP (local)      | 3105 | SSE         | http://localhost:3105/sse                    |
 | Playwright            | Microsoft Playwright MCP        | 3106 | SSE         | http://localhost:3106/sse                    |
 | GitHub                | github-mcp-server               | -    | stdio       | Claude Desktop only                          |
-| Jenkins               | mcpland/jenkins-mcp             | -    | stdio       | Claude Desktop only                          |
+| Jenkins               | Custom Python MCP (local)       | 3117 | SSE         | http://localhost:3117/sse                    |
 | Portainer (6 servers) | Custom FastMCP wrapper (local)  | 3111-3116 | SSE     | http://localhost:3111/sse (build1)           |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
@@ -371,9 +371,11 @@ curl http://localhost:3105/sse
 # Playwright (SSE)
 curl http://localhost:3106/sse
 
+# Jenkins (SSE)
+curl http://localhost:3117/sse
+
 # Stdio servers
 docker compose run --rm github-mcp
-docker compose run --rm jenkins-mcp
 ```
 
 ### Verify All MCP Servers
