@@ -246,7 +246,6 @@ Create these Jenkins credentials before running the pipeline:
 - Secret text: `mcp-jenkins-url`
 - Secret text: `mcp-jenkins-username`
 - Secret text: `mcp-jenkins-api-token`
-- Secret text: `mcp-slack-bot-token`
 - Secret text: `mcp-todoist-api-token`
 - Secret text: `mcp-yahoo-email`
 - Secret text: `mcp-yahoo-app-password`

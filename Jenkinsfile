@@ -87,14 +87,12 @@ pipeline {
                         withCredentials([
                             string(credentialsId: 'mcp-jenkins-url', variable: 'MCP_JENKINS_URL'),
                             string(credentialsId: 'mcp-jenkins-username', variable: 'MCP_JENKINS_USERNAME'),
-                            string(credentialsId: 'mcp-jenkins-api-token', variable: 'MCP_JENKINS_API_TOKEN'),
-                            string(credentialsId: 'mcp-slack-bot-token', variable: 'MCP_SLACK_BOT_TOKEN')
+                            string(credentialsId: 'mcp-jenkins-api-token', variable: 'MCP_JENKINS_API_TOKEN')
                         ]) {
                             withEnv([
                                 'JENKINS_URL=' + env.MCP_JENKINS_URL,
                                 'JENKINS_USERNAME=' + env.MCP_JENKINS_USERNAME,
-                                'JENKINS_API_TOKEN=' + env.MCP_JENKINS_API_TOKEN,
-                                'SLACK_BOT_TOKEN=' + env.MCP_SLACK_BOT_TOKEN
+                                'JENKINS_API_TOKEN=' + env.MCP_JENKINS_API_TOKEN
                             ]) {
                                 sh '''
                                     HOST_MCP_DATA_DIR="/home/jenkins/mcp-server-setup-data"
