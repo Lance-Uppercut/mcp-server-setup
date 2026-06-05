@@ -161,6 +161,24 @@ services:
     networks:
       - mcp-network
 
+  # Slack MCP Server
+  slack-mcp:
+    image: registry:5000/offbeat-iot/slack-mcp:latest
+    container_name: slack-mcp
+    build:
+      context: ./servers/slack-mcp
+      dockerfile: Dockerfile
+    environment:
+      - SLACK_BOT_TOKEN=${SLACK_BOT_TOKEN:-}
+      - SLACK_DEFAULT_REPLY_TIMEOUT_SECONDS=${SLACK_DEFAULT_REPLY_TIMEOUT_SECONDS:-300}
+      - SLACK_REPLY_POLL_INTERVAL_SECONDS=${SLACK_REPLY_POLL_INTERVAL_SECONDS:-5}
+      - MCP_HOST=0.0.0.0
+      - MCP_PORT=3108
+    ports:
+      - "3108:3108"
+    networks:
+      - mcp-network
+
   # Todoist MCP Server
   todoist-mcp:
     image: registry:5000/offbeat-iot/todoist-mcp:latest

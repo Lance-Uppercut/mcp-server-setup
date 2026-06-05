@@ -61,6 +61,7 @@ if [[ "$CHECK_CONTAINERS" -eq 1 ]] && command -v docker >/dev/null 2>&1; then
     "tado:tado-mcp" \
     "signal-proxy:signal-proxy" \
     "signal:signal-mcp" \
+    "slack:slack-mcp" \
     "google:google-workspace-mcp" \
     "todoist:todoist-mcp" \
     "asus-router:asus-router-mcp" \
@@ -128,6 +129,7 @@ for entry in \
   "alertmanager:http://${HOST}:8001/sse" \
   "tado:http://${HOST}:3102/sse" \
   "signal:http://${HOST}:3107/sse" \
+  "slack:http://${HOST}:3108/sse" \
   "google:http://${HOST}:3103/sse" \
   "todoist:http://${HOST}:3104/sse" \
   "asus-router:http://${HOST}:3105/sse" \
@@ -186,6 +188,7 @@ for entry in \
   "alertmanager:http://${HOST}:8001/sse" \
   "tado:http://${HOST}:3102/sse" \
   "signal:http://${HOST}:3107/sse" \
+  "slack:http://${HOST}:3108/sse" \
   "google:http://${HOST}:3103/sse" \
   "todoist:http://${HOST}:3104/sse" \
   "asus-router:http://${HOST}:3105/sse" \

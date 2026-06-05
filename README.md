@@ -11,6 +11,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | Alertmanager          | ntk148v/alertmanager-mcp-server | 8001 | SSE         | http://localhost:8001/sse                    |
 | Tado                  | Custom Java MCP (local)         | 3102 | SSE         | http://localhost:3102/sse                    |
 | Signal                | Custom Python MCP + signal-cli-rest-api | 3107 | SSE         | http://localhost:3107/sse                    |
+| Slack                 | Custom Python MCP (local)       | 3108 | SSE         | http://localhost:3108/sse                    |
 | Google Workspace      | Custom Node.js MCP (local)      | 3103 | SSE         | http://localhost:3103/sse                    |
 | Todoist               | koki-develop/todoist-mcp-server | 3104 | SSE         | http://localhost:3104/sse                    |
 | ASUS Router           | Custom Node.js MCP (local)      | 3105 | SSE         | http://localhost:3105/sse                    |
@@ -138,6 +139,7 @@ http://localhost:3101/mcp/sse   # Yahoo Mail
 http://localhost:8001/sse       # Alertmanager
 http://localhost:3102/sse       # Tado
 http://localhost:3107/sse       # Signal
+http://localhost:3108/sse       # Slack
 http://localhost:3103/sse       # Google Workspace
 http://localhost:3104/sse       # Todoist
 http://localhost:3105/sse       # ASUS Router
@@ -150,6 +152,7 @@ http://build1:3101/mcp/sse      # Yahoo Mail
 http://build1:8001/sse          # Alertmanager
 http://build1:3102/sse          # Tado
 http://build1:3107/sse          # Signal
+http://build1:3108/sse          # Slack
 http://build1:3103/sse          # Google Workspace
 http://build1:3104/sse          # Todoist
 http://build1:3105/sse          # ASUS Router
@@ -196,10 +199,19 @@ Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
 
 2. Fill in your credentials in `.env`
 
-   Required for ASUS MCP:
+    Required for ASUS MCP:
 
-   - `ROUTER_HOST` (or `ROUTER_HOSTS` + `ROUTER_PROFILE`)
-   - `ROUTER_PASSWORD`
+    - `ROUTER_HOST` (or `ROUTER_HOSTS` + `ROUTER_PROFILE`)
+    - `ROUTER_PASSWORD`
+
+    Required for Slack MCP:
+
+    - `SLACK_BOT_TOKEN`
+
+    Optional for Slack MCP:
+
+    - `SLACK_DEFAULT_REPLY_TIMEOUT_SECONDS`
+    - `SLACK_REPLY_POLL_INTERVAL_SECONDS`
 
 3. Configure SSH servers in `ssh/config`:
    ```bash
@@ -234,6 +246,7 @@ Create these Jenkins credentials before running the pipeline:
 - Secret text: `mcp-jenkins-url`
 - Secret text: `mcp-jenkins-username`
 - Secret text: `mcp-jenkins-api-token`
+- Secret text: `mcp-slack-bot-token`
 - Secret text: `mcp-todoist-api-token`
 - Secret text: `mcp-yahoo-email`
 - Secret text: `mcp-yahoo-app-password`
