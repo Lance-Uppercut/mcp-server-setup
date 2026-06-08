@@ -1,13 +1,28 @@
 #!/usr/bin/env python3
 import base64
 import json
+import logging
 import os
 import re
 from typing import Any, Dict, List, Optional
 
 import httpx
 from mcp.server.fastmcp import FastMCP
+from mcp.server.session import ServerSession
 from mcp.server.transport_security import TransportSecuritySettings
+
+logger = logging.getLogger(__name__)
+
+_original_received_request = ServerSession._received_request
+
+async def _patched_received_request(self, *args, **kwargs):
+    try:
+        return await _original_received_request(self, *args, **kwargs)
+    except RuntimeError:
+        logger.warning("Ignored pre-initialization request for session")
+        return None
+
+ServerSession._received_request = _patched_received_request
 
 
 JENKINS_URL = os.environ.get("JENKINS_URL", "http://localhost:8080").rstrip("/")
