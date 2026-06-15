@@ -19,6 +19,7 @@ Docker Compose setup for hosting multiple MCP servers to connect your AI assista
 | GitHub                | github-mcp-server               | -    | stdio       | Claude Desktop only                          |
 | Jenkins               | Custom Python MCP (local)       | 3117 | SSE         | http://localhost:3117/sse                    |
 | Portainer (6 servers) | Custom FastMCP wrapper (local)  | 3111-3116 | SSE     | http://localhost:3111/sse (build1)           |
+| Headroom Proxy        | Context compression proxy       | 8787 | HTTP        | http://localhost:8787/v1                     |
 
 **Note:** Servers marked as "Claude Desktop only" use stdio transport and must be run via `docker compose run --rm`.
 
@@ -68,6 +69,64 @@ ROUTER_HOST=192.168.1.2
 ROUTER_HOST_SECONDARY=192.168.1.18
 docker compose -f docker-compose.asus.yml --profile multi-asus up -d --build
 ```
+
+## Headroom Proxy
+
+[Headroom](https://github.com/chopratejas/headroom) is a context compression proxy that sits between your LLM client and provider. It compresses tool outputs, logs, files, and conversation history before they reach the LLM — **60–95% fewer tokens, same answers**.
+
+### How it works
+
+```
+Your LLM client → http://headroom-proxy:8787/v1 → Headroom compresses → Upstream provider API
+```
+
+The proxy is an OpenAI-compatible endpoint. Point any client at `http://headroom-proxy:8787/v1` and it transparently compresses requests before forwarding to your provider.
+
+### Using with Claude Code (inside opencode)
+
+```bash
+# Inside the opencode container, wrap claude to use the proxy automatically
+headroom wrap claude
+
+# Or configure the proxy directly
+export ANTHROPIC_BASE_URL=http://headroom-proxy:8787/v1
+```
+
+### Using with any OpenAI-compatible client
+
+```bash
+export OPENAI_BASE_URL=http://headroom-proxy:8787/v1
+```
+
+### Configuring the upstream
+
+By default the proxy forwards to OpenAI. To route through a different provider:
+
+```bash
+# In .env:
+HEADROOM_TARGET_API_URL=https://api.anthropic.com
+
+# Or set directly on the service (uncomment in docker-compose.yml):
+# - OPENAI_TARGET_API_URL=${HEADROOM_TARGET_API_URL:-}
+```
+
+### Verify it's running
+
+```bash
+curl http://localhost:8787/readyz
+curl http://localhost:8787/v1/models
+```
+
+### MCP integration
+
+Headroom also provides MCP tools for compress/retrieve/stats. Install in any MCP client:
+
+```bash
+# Inside a container with headroom installed:
+headroom mcp install
+```
+
+This exposes `headroom_compress`, `headroom_retrieve`, and `headroom_stats` tools.
 
 ## OpenCode CLI
 
