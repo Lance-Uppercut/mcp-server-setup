@@ -292,6 +292,28 @@ services:
     networks:
       - mcp-network
 
+  headroom-proxy:
+    image: ghcr.io/chopratejas/headroom:latest
+    environment:
+      - HEADROOM_HOST=0.0.0.0
+      # Point at your LLM provider. Defaults to OpenAI.
+      # - OPENAI_TARGET_API_URL=${HEADROOM_TARGET_API_URL:-}
+    ports:
+      - target: 8787
+        published: 8787
+        protocol: tcp
+        mode: ingress
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8787/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    volumes:
+      - ${MCP_DATA_DIR:-/home/jenkins/mcp-server-setup-data}/headroom:/data
+    networks:
+      - mcp-network
+
 networks:
   mcp-network:
     name: sentinel_sentinel-swarm-network

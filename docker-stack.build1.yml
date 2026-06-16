@@ -73,3 +73,6 @@ services:
   portainer-production1:
     deploy:
       <<: *deploy-defaults
+  headroom-proxy:
+    deploy:
+      <<: *deploy-defaults

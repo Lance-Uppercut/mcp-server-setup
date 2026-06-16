@@ -355,6 +355,31 @@ services:
     networks:
       - mcp-network
 
+  # Headroom Proxy - context compression for LLM calls (60-95% fewer tokens)
+  # https://github.com/chopratejas/headroom
+  headroom-proxy:
+    image: ghcr.io/chopratejas/headroom:latest
+    container_name: headroom-proxy
+    environment:
+      - HEADROOM_HOST=0.0.0.0
+      # Point at your LLM provider. Defaults to OpenAI.
+      # - OPENAI_TARGET_API_URL=${HEADROOM_TARGET_API_URL:-}
+    ports:
+      - "8787:8787"
+    healthcheck:
+      test: ["CMD", "curl", "--fail", "--silent", "http://127.0.0.1:8787/readyz"]
+      interval: 30s
+      timeout: 5s
+      retries: 3
+      start_period: 20s
+    volumes:
+      - headroom_data:/data
+    networks:
+      - mcp-network
+
+volumes:
+  headroom_data:
+
 networks:
   mcp-network:
     name: sentinel_sentinel-network
