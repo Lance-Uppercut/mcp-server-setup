@@ -34,6 +34,15 @@ MCP_PORT = int(os.environ.get("MCP_PORT", "3117"))
 
 mcp = FastMCP("jenkins-mcp")
 
+_shared_client: Optional[httpx.Client] = None
+
+
+def _get_client() -> httpx.Client:
+    global _shared_client
+    if _shared_client is None:
+        _shared_client = httpx.Client(timeout=30.0, verify=False, follow_redirects=True)
+    return _shared_client
+
 
 def _headers(content_type: Optional[str] = "application/json", accept: str = "application/json") -> Dict[str, str]:
     headers = {"Accept": accept}
@@ -44,6 +53,25 @@ def _headers(content_type: Optional[str] = "application/json", accept: str = "ap
         encoded = base64.b64encode(auth_str.encode()).decode()
         headers["Authorization"] = f"Basic {encoded}"
     return headers
+
+
+def _detect_auth_failure(result: Dict[str, Any]) -> Optional[str]:
+    status = result.get("status_code", 0)
+    if status == 401:
+        return "Jenkins authentication failed. Check that JENKINS_USERNAME and JENKINS_API_TOKEN are correct."
+    if status == 403:
+        return "Jenkins access denied (403). The session may have expired or credentials lack the required permissions."
+    if status in (302, 303):
+        location = result.get("headers", {}).get("location", "")
+        if "login" in location.lower():
+            return "Jenkins session expired. The Jenkins server redirected to the login page. Check credentials or refresh the API token."
+    if status == 0:
+        return f"Jenkins unreachable: {result.get('error', 'connection failed')}. Verify JENKINS_URL is correct and the server is running."
+    if status == 200:
+        resp = result.get("response", "")
+        if isinstance(resp, str) and ("signIn" in resp or "j_acegi_security_check" in resp):
+            return "Jenkins session expired. Received login page instead of expected response."
+    return None
 
 
 def _crumb_headers(client: httpx.Client) -> Dict[str, str]:
@@ -77,6 +105,23 @@ def _parse_response_body(response: httpx.Response) -> Any:
     return response.text
 
 
+def _build_result(response: httpx.Response, method: str, path: str) -> Dict[str, Any]:
+    body = _parse_response_body(response)
+    result = {
+        "ok": response.is_success,
+        "status_code": response.status_code,
+        "method": method,
+        "path": path,
+        "headers": dict(response.headers),
+        "response": body,
+    }
+    error = _detect_auth_failure(result)
+    if error:
+        result["ok"] = False
+        result.setdefault("error", error)
+    return result
+
+
 def _request(
     method: str,
     path: str,
@@ -93,23 +138,24 @@ def _request(
     method = method.upper()
 
     try:
-        with httpx.Client(timeout=timeout, verify=False, follow_redirects=False) as client:
-            request_headers = _headers()
-            if method != "GET":
-                request_headers.update(_crumb_headers(client))
-            if headers:
-                request_headers.update(headers)
+        client = _get_client()
+        request_headers = _headers()
+        if method != "GET":
+            request_headers.update(_crumb_headers(client))
+        if headers:
+            request_headers.update(headers)
 
-            response = client.request(
-                method=method,
-                url=url,
-                headers=request_headers,
-                params=params,
-                json=body,
-                data=data,
-            )
+        response = client.request(
+            method=method,
+            url=url,
+            headers=request_headers,
+            params=params,
+            json=body,
+            data=data,
+            timeout=timeout,
+        )
     except httpx.HTTPError as exc:
-        return {
+        result = {
             "ok": False,
             "status_code": 0,
             "method": method,
@@ -118,15 +164,12 @@ def _request(
             "error": str(exc),
             "response": "",
         }
+        error = _detect_auth_failure(result)
+        if error:
+            result["error"] = error
+        return result
 
-    return {
-        "ok": response.is_success,
-        "status_code": response.status_code,
-        "method": method,
-        "path": path,
-        "headers": dict(response.headers),
-        "response": _parse_response_body(response),
-    }
+    return _build_result(response, method, path)
 
 
 def _parse_json_text(value: Any) -> Any:
