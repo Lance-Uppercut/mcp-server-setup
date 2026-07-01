@@ -1,0 +1,25 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/servers/yahoo-mail-sse"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm_and_yarn:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "@modelcontextprotocol/sdk"
+
+  - package-ecosystem: "npm"
+    directory: "/servers/mcp-google-workspace"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm_and_yarn:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "@modelcontextprotocol/sdk"
+      - dependency-name: "axios"
+      - dependency-name: "jws"
