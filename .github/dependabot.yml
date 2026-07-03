@@ -1,0 +1,31 @@
+version: 2
+updates:
+  - package-ecosystem: "npm"
+    directory: "/servers/yahoo-mail-sse"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm_and_yarn:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "@modelcontextprotocol/sdk"
+      - dependency-name: "mailparser"
+      - dependency-name: "ajv"
+      - dependency-name: "minimatch"
+      - dependency-name: "path-to-regexp"
+      - dependency-name: "picomatch"
+      - dependency-name: "qs"
+
+  - package-ecosystem: "npm"
+    directory: "/servers/mcp-google-workspace"
+    schedule:
+      interval: "weekly"
+    groups:
+      npm_and_yarn:
+        patterns:
+          - "*"
+    ignore:
+      - dependency-name: "@modelcontextprotocol/sdk"
+      - dependency-name: "axios"
+      - dependency-name: "jws"
